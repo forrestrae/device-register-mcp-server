@@ -21,7 +21,7 @@ three tools and the same resource URIs (under each device's own `uri_scheme`).
 ## Layout
 
 ```
-device-register-docs/
+device-register-mcp-server/
   server.py              # generic server; device chosen via DEVICE_CONFIG
   requirements.txt
   devices/
@@ -276,7 +276,7 @@ The BQ25798 device lives at `devices/bq25798/` (manifest + 57-register JSON +
 `BQ25798-register-schema.json`) and is served as the `bq25798-docs` MCP server:
 
 ```bash
-# From the device-register-docs/ directory:
+# From the device-register-mcp-server/ directory:
 DEVICE_CONFIG=devices/bq25798/device.json uv run server.py
 ```
 

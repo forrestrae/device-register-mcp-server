@@ -23,7 +23,7 @@ Both run the same `server.py`, pointed at a different device via the
 ## Layout
 
 ```
-device-register-docs/
+device-register-mcp-server/
   server.py              # generic server; device chosen via DEVICE_CONFIG
   requirements.txt
   devices/
@@ -45,7 +45,7 @@ DEVICE_CONFIG=devices/bq25798/device.json  uv run server.py
 
 `DEVICE_CONFIG` is resolved relative to `server.py`'s own directory, so it works
 the same whether invoked from this repo directly or from a sibling library repo
-(e.g. `uv run ../device-register-docs/server.py`).
+(e.g. `uv run ../device-register-mcp-server/server.py`).
 
 ## Available Tools
 
@@ -70,9 +70,9 @@ flow — see [`AGENTS.md`](AGENTS.md) for the manual procedure.
 Library repos that use this server point at it via a relative path, assuming
 the sibling-checkout layout under a common `lib/`:
 
-- **TPS25751**: `.mcp.json` → `uv run ../device-register-docs/server.py`,
+- **TPS25751**: `.mcp.json` → `uv run ../device-register-mcp-server/server.py`,
   `DEVICE_CONFIG=devices/tps25751/device.json`
-- **BQ25798**: `.mcp.json` → `uv run ../device-register-docs/server.py`,
+- **BQ25798**: `.mcp.json` → `uv run ../device-register-mcp-server/server.py`,
   `DEVICE_CONFIG=devices/bq25798/device.json`
 
 ## License

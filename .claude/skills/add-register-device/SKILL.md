@@ -123,7 +123,7 @@ Read the chosen schema before writing — it is the contract. Conventions common
    (`mcp__<name>-docs__search_register`, `…__explain_bitfield`, `…__get_register`) and
    list `<name>-docs` in `enabledMcpjsonServers`. Consumer library repos (e.g.
    `lib/TPS25751`, `lib/BQ25798`) instead invoke this server from the sibling
-   `lib/device-register-docs` checkout: `uv run ../device-register-docs/server.py`.
+   `lib/device-register-mcp-server` checkout: `uv run ../device-register-mcp-server/server.py`.
 6. **Print how to run it standalone** for a quick check:
    ```bash
    DEVICE_CONFIG=devices/<name>/device.json uv run server.py
