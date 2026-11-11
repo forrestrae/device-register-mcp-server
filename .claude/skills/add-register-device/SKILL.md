@@ -5,7 +5,7 @@ description: >-
   Use when the user wants to "add a device",
   "serve another chip's registers", "convert a register table / datasheet into the
   MCP server's JSON", or "create a device.json manifest". Produces a device folder
-  under devices/<name>/ (manifest + registers JSON + schema), validates it, and wires
+  under devices/name/ (manifest + registers JSON + schema), validates it, and wires
   it up as a new MCP server. Authoring only — looking up existing registers is done
   with the per-device MCP tools (search_register / explain_bitfield / get_register).
 ---
