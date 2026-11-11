@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.10"
-# dependencies = [
-#   "mcp[cli]>=1.28.0",
-#   "jsonschema",
-# ]
-# ///
 """
 Device Documentation MCP Server
 
 Generic MCP server for hardware device register documentation.
 Device identity is driven by a device.json manifest (or DEVICE_CONFIG env var).
 Defaults to TPS25751 when no manifest overrides are provided.
+
+Dependencies are declared in pyproject.toml and pinned in uv.lock. Launch with
+`uv --directory <this repo> run server.py` so uv uses this project's environment
+regardless of the caller's working directory.
 """
 
 import json
 import logging
 import os
 import sys
+import tomllib
 from pathlib import Path
 from typing import Any, Dict, List
 
-from mcp.server.fastmcp import FastMCP
+import jsonschema
+from mcp.server.mcpserver import MCPServer
 
 # Configure logging to stderr to avoid interfering with stdio transport
 logging.basicConfig(
@@ -33,7 +32,7 @@ logger = logging.getLogger("device-docs-server")
 
 # ---------------------------------------------------------------------------
 # Config loader  (runs at import time so module globals are set before
-# FastMCP decorators evaluate their URI f-strings)
+# MCPServer decorators evaluate their URI f-strings)
 # ---------------------------------------------------------------------------
 
 _SERVER_DIR = Path(__file__).parent
@@ -96,6 +95,22 @@ def load_device_config() -> tuple[Dict[str, Any], Path]:
     return config, manifest_dir
 
 
+def read_server_version() -> str:
+    """Return the project version from pyproject.toml beside server.py.
+
+    The project is not installed as a package (tool.uv.package = false), so
+    importlib.metadata cannot see it; pyproject.toml is the single version source.
+    """
+    try:
+        with open(_SERVER_DIR / "pyproject.toml", "rb") as f:
+            return tomllib.load(f)["project"]["version"]
+    except (OSError, tomllib.TOMLDecodeError, KeyError) as e:
+        logger.warning(f"Could not read version from pyproject.toml: {e}")
+        return "0.0.0+unknown"
+
+
+SERVER_VERSION: str = read_server_version()
+
 _CONFIG, _MANIFEST_DIR = load_device_config()
 
 # Module globals set from config — these are referenced in f-string decorators below
@@ -111,14 +126,15 @@ REGISTERS_PATH: Path = (_MANIFEST_DIR / _CONFIG["registers_file"]).resolve()
 SCHEMA_PATH: Path = (_MANIFEST_DIR / _CONFIG["schema_file"]).resolve()
 
 logger.info(
-    f"Server: {SERVER_NAME} | Device: {DEVICE_NAME} | Registers: {REGISTERS_PATH}"
+    f"Server: {SERVER_NAME} v{SERVER_VERSION} | Device: {DEVICE_NAME} | "
+    f"Registers: {REGISTERS_PATH}"
 )
 
 # ---------------------------------------------------------------------------
-# FastMCP instance — must be created after SERVER_NAME is set
+# MCPServer instance: must be created after SERVER_NAME is set
 # ---------------------------------------------------------------------------
 
-mcp = FastMCP(SERVER_NAME)
+mcp = MCPServer(SERVER_NAME, version=SERVER_VERSION)
 
 
 # ---------------------------------------------------------------------------
@@ -137,25 +153,20 @@ def load_registers_from_json() -> Dict[str, Any]:
         logger.error(f"Failed to parse register JSON: {e}")
         return {"registers": []}
 
-    # Optional schema validation
+    # Schema validation (warn-only, so a schema drift never takes the server down)
     if SCHEMA_PATH.exists():
         try:
-            import jsonschema  # noqa: PLC0415
             with open(SCHEMA_PATH) as f:
                 schema = json.load(f)
-            try:
-                jsonschema.validate(instance=data, schema=schema)
-                logger.info(f"Register data validated against schema {SCHEMA_PATH}")
-            except jsonschema.ValidationError as ve:
-                logger.warning(
-                    f"Register data failed schema validation: {ve.message}. "
-                    "Continuing with unvalidated data."
-                )
-        except ImportError:
-            logger.info(
-                "jsonschema not installed — schema validation skipped. "
-                "Install with: pip install jsonschema"
+            jsonschema.validate(instance=data, schema=schema)
+            logger.info(f"Register data validated against schema {SCHEMA_PATH}")
+        except jsonschema.ValidationError as ve:
+            logger.warning(
+                f"Register data failed schema validation: {ve.message}. "
+                "Continuing with unvalidated data."
             )
+        except (json.JSONDecodeError, OSError, jsonschema.SchemaError) as e:
+            logger.warning(f"Could not validate against {SCHEMA_PATH}: {e}")
     else:
         logger.info(f"Schema file not found at {SCHEMA_PATH} — validation skipped.")
 

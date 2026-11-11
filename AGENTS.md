@@ -23,14 +23,15 @@ three tools and the same resource URIs (under each device's own `uri_scheme`).
 ```
 device-register-mcp-server/
   server.py              # generic server; device chosen via DEVICE_CONFIG
-  requirements.txt
+  pyproject.toml         # uv project: dependencies; version reported as serverInfo.version
+  uv.lock                # pinned dependency versions
   devices/
     tps25751/  device.json + tps25751_registers_extracted.json + TPS25751-register-schema.json
     bq25798/   device.json + bq25798_registers_extracted.json  + BQ25798-register-schema.json
 ```
 
 Each device's registers JSON is the single source of truth for that device, validated
-at startup against the schema in the same folder (when `jsonschema` is installed).
+at startup against the schema in the same folder.
 
 ## Available Tools
 
@@ -220,8 +221,8 @@ configured device.
 The MCP server (`server.py`) dynamically loads register data at startup:
 
 1. Reads the configured registers JSON file (from `device.json` / `DEVICE_CONFIG`)
-2. Optionally validates the JSON against the schema using `jsonschema` (logs a
-   WARNING on failure but does not crash; logs INFO if `jsonschema` is not installed)
+2. Validates the JSON against the device's schema using `jsonschema` (logs a
+   WARNING on failure but does not crash; skips validation if no schema file exists)
 3. Converts hex format ("3h" → "0x03")
 4. Formats bit fields with ranges and access types
 5. Builds searchable register dictionary

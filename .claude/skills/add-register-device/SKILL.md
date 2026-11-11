@@ -99,7 +99,7 @@ Read the chosen schema before writing — it is the contract. Conventions common
      "see the datasheet" note instead of asserting a protocol.
 4. **Validate** before declaring done:
    ```bash
-   uv run --with jsonschema python3 - <<'PY'
+   uv run python - <<'PY'
    import json, jsonschema, pathlib
    base = pathlib.Path("devices/<name>")
    schema = json.load(open(base / "<schema file>"))
@@ -115,7 +115,7 @@ Read the chosen schema before writing — it is the contract. Conventions common
    "<name>-docs": {
      "type": "stdio",
      "command": "uv",
-     "args": ["run", "./server.py"],
+     "args": ["--directory", ".", "run", "server.py"],
      "env": { "DEVICE_CONFIG": "devices/<name>/device.json" }
    }
    ```
@@ -123,7 +123,7 @@ Read the chosen schema before writing — it is the contract. Conventions common
    (`mcp__<name>-docs__search_register`, `…__explain_bitfield`, `…__get_register`) and
    list `<name>-docs` in `enabledMcpjsonServers`. Consumer library repos (e.g.
    `lib/TPS25751`, `lib/BQ25798`) instead invoke this server from the sibling
-   `lib/device-register-mcp-server` checkout: `uv run ../device-register-mcp-server/server.py`.
+   `lib/device-register-mcp-server` checkout: `uv --directory ../device-register-mcp-server run server.py`.
 6. **Print how to run it standalone** for a quick check:
    ```bash
    DEVICE_CONFIG=devices/<name>/device.json uv run server.py

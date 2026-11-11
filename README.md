@@ -25,15 +25,15 @@ Both run the same `server.py`, pointed at a different device via the
 ```
 device-register-mcp-server/
   server.py              # generic server; device chosen via DEVICE_CONFIG
-  requirements.txt
+  pyproject.toml         # uv project: dependencies; version reported as serverInfo.version
+  uv.lock                # pinned dependency versions
   devices/
     tps25751/  device.json + tps25751_registers_extracted.json + TPS25751-register-schema.json
     bq25798/   device.json + bq25798_registers_extracted.json  + BQ25798-register-schema.json
 ```
 
 Each device's registers JSON is the single source of truth for that device,
-validated at startup against the schema in the same folder (when `jsonschema`
-is installed).
+validated at startup against the schema in the same folder.
 
 ## Running the Server
 
@@ -43,9 +43,16 @@ DEVICE_CONFIG=devices/tps25751/device.json uv run server.py
 DEVICE_CONFIG=devices/bq25798/device.json  uv run server.py
 ```
 
-`DEVICE_CONFIG` is resolved relative to `server.py`'s own directory, so it works
-the same whether invoked from this repo directly or from a sibling library repo
-(e.g. `uv run ../device-register-mcp-server/server.py`).
+From any other directory, pass `--directory` so uv uses this project's
+environment (from `pyproject.toml` and `uv.lock`) instead of whatever project encloses the
+caller's working directory:
+
+```bash
+DEVICE_CONFIG=devices/bq25798/device.json uv --directory ../device-register-mcp-server run server.py
+```
+
+`DEVICE_CONFIG` is resolved relative to `server.py`'s own directory, so the same
+value works from this repo and from a sibling library repo.
 
 ## Available Tools
 
@@ -70,9 +77,9 @@ flow — see [`AGENTS.md`](AGENTS.md) for the manual procedure.
 Library repos that use this server point at it via a relative path, assuming
 the sibling-checkout layout under a common `lib/`:
 
-- **TPS25751**: `.mcp.json` → `uv run ../device-register-mcp-server/server.py`,
+- **TPS25751**: `.mcp.json` → `uv --directory ../device-register-mcp-server run server.py`,
   `DEVICE_CONFIG=devices/tps25751/device.json`
-- **BQ25798**: `.mcp.json` → `uv run ../device-register-mcp-server/server.py`,
+- **BQ25798**: `.mcp.json` → `uv --directory ../device-register-mcp-server run server.py`,
   `DEVICE_CONFIG=devices/bq25798/device.json`
 
 ## License

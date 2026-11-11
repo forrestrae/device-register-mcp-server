@@ -1,0 +1,18 @@
+[project]
+name = "device-register-mcp-server"
+version = "0.1.0"  # also reported as serverInfo.version in the MCP handshake
+description = "Device-generic MCP server for hardware register documentation"
+readme = "README.md"
+license = "Apache-2.0"
+# 3.10 reached end of life in October 2026; tomllib (used for the version) needs 3.11.
+requires-python = ">=3.11"
+dependencies = [
+    # <3: the 1.x to 2.x major bump renamed FastMCP to MCPServer and broke imports.
+    "mcp>=2.3.0,<3",
+    "jsonschema>=4.26.0",
+]
+
+[tool.uv]
+# Run from the source tree (server.py locates devices/ relative to itself),
+# so there is nothing to build or install.
+package = false
