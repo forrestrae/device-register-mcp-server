@@ -77,7 +77,7 @@ Get detailed information about specific bit fields within a register.
 ```
 explain_bitfield("STATUS", "Connection State")
 explain_bitfield("MODE", "Mode")
-explain_bitfield("INTERRUPT_EVENT_FOR_I2C1", "Liquid Detection")
+explain_bitfield("INTERRUPT_EVENT_FOR_I2CT_IRQ", "Liquid Detection")
 ```
 
 **Returns:**
@@ -101,7 +101,7 @@ an error with the full list of available register names.
 ```
 get_register("STATUS")
 get_register("Power Path Status")
-get_register("INTERRUPT_EVENT_FOR_I2C1")
+get_register("INTERRUPT_EVENT_FOR_I2CT_IRQ")
 ```
 
 **Returns:**
@@ -289,6 +289,10 @@ editing it by hand, then review the diff before replacing the current file.
 5. Copy the candidate over `devices/tps25751/tps25751_registers_extracted.json`, run the
    validator described in the next section, and restart the MCP server, which loads the
    JSON at startup. No code changes are needed in `server.py`.
+
+Register names come straight from the document, so a renamed register changes its
+`get_register` key. The TPS25751 revision B manual renamed several registers, for
+example `Interrupt Event for I2C1` to `Interrupt Event for I2Ct_IRQ`.
 
 ### Validating register data
 

@@ -1,18 +1,25 @@
 {
+  "document": {
+    "id": "SLVUCR8B",
+    "revision": "B",
+    "date": "2026-08",
+    "title": "TPS25751 Technical Reference Manual (Rev. B)"
+  },
   "registers": [
     {
       "offset": "3h",
       "name": "Mode",
       "width": 32,
       "reset": "00000000h",
-      "description": "Indicates the operational state of the port. The PD controller has limited functionality in some modes. Table 3-3. Mode Register Field Descriptions",
+      "description": "Indicates the operational state of the port. The PD Controller has limited functionality in some modes.",
+      "source_page": 14,
       "fields": [
         {
           "bit_field": "31-0",
           "name": "Mode",
           "access_type": "R",
           "reset": "0h",
-          "description": "The mode described in 4 ASCII characters. 'APP ' indicates that the PD controller is fully functioning in the application firmware where all registers are available. 'BOOT' indicates that the PD controller is booting in dead battery. 'PTCH' indicates that the PD controller is in patch mode. Any other values indicates that the PD controller is functioning in limited capacity. In 'BOOT' and 'PTCH' only the follow register addresses are accessible, Mode, Command, Data, Int Event,  Int Mask, Int Clear, and Boot Flags."
+          "description": "The mode described in 4 ASCII characters. 'APP ' indicates that the PD Controller is fully functioning in the application firmware where all registers are available. 'BOOT' indicates that the PD controller is booting in dead battery. 'PTCH' indicates that the PD controller is in patch mode. Any value other than 'APP ' indicates that the PD controller is functioning in limited capacity. In 'BOOT' and 'PTCH' modes, only the following register addresses are accessible: MODE (0x03), Command (0x08), Data (0x09), INT_EVENT (0x14), INT_MASK (0x16), INT_CLEAR (0x18), and BOOT_FLAGS (0x2D)."
         }
       ]
     },
@@ -21,55 +28,76 @@
       "name": "Customer Use",
       "width": 64,
       "reset": "0000000000000000h",
-      "description": "These 8 bytes are allocated for customer use as needed. The PD controller does not use this register. This register may be changed during application customization. Table 3-4. Customer Use Register Field Descriptions",
+      "description": "This register is allocated for customer use. It is typically used for version control, but usage flexibility remains with the customer.",
+      "source_page": 15,
       "fields": [
         {
           "bit_field": "63-0",
           "name": "Customer Use",
           "access_type": "R",
           "reset": "0h",
-          "description": "These 8 bytes are allocated for customer use as needed. The PD controller does not use this register. This register may be changed during application customization."
+          "description": "These 8 bytes are allocated for customer use as needed. The PD Controller does not use this register. This register can only be changed during application customization, not at runtime."
         }
       ]
     },
     {
       "offset": "8h",
-      "name": "Command Register for I2C1",
+      "name": "Command Register (CMD1) for I2Ct",
       "width": 32,
       "reset": "00000000h",
-      "description": "Command register for the primary command interface. Cleared to 0x0000_0000 by the PD Controller during initialization and after successful processing of every command. If an unrecognized command is written to this register, it is replaced by a 4CC value of '!CMD'. Table 3-5. Command Register for I2C1 Field Descriptions",
+      "description": "Command register. The PD Controller clears it on initialization and after completing a command.",
+      "source_page": 16,
       "fields": [
         {
           "bit_field": "31-0",
           "name": "Command",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Command register for the primary command interface. Cleared to 0x0000_0000 by the PD Controller during initialization and after successful processing of every command. If an unrecognized command is written to this register, it is replaced by a 4CC value of  '!CMD'."
+          "description": "Command register for the command interface. The PD Controller clears this register to 0x0 on initialization and after completing any recognized commands. Unrecognized commands are overwritten with !CMD."
         }
       ]
     },
     {
       "offset": "9h",
-      "name": "Data Register for CMD1",
+      "name": "Data Register (DATA1) for CMD1",
       "width": 512,
       "reset": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000h",
-      "description": "Data register for the primary command interface (CMD1). Table 3-6. Data Register for CMD1 Field Descriptions",
+      "description": "Data register (DATA1) for the command interface (CMD1).",
+      "source_page": 17,
       "fields": [
         {
           "bit_field": "511-0",
           "name": "Data",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Data register for the primary command interface (CMD1)."
+          "description": "Data register (DATA1) for the command interface (CMD1). The first byte of this register will contain the return code if applicable, and the remaining bytes will contain the command's output"
+        }
+      ]
+    },
+    {
+      "offset": "Fh",
+      "name": "Version",
+      "width": 32,
+      "reset": "00000000h",
+      "description": "Bootloader/application code version. Represented as VVVV.MM.RR. The version information is returned in little Endian format i.e. byte 1 = RR, byte 2 = MM, etc.",
+      "source_page": 18,
+      "fields": [
+        {
+          "bit_field": "31-0",
+          "name": "Version",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "Bootloader/application code version. Represented as VVVV.MM.RR. The version information is returned in little Endian format i.e. byte 1 = RR, byte 2 = MM, etc."
         }
       ]
     },
     {
       "offset": "14h",
-      "name": "Interrupt Event for I2C1",
+      "name": "Interrupt Event for I2Ct_IRQ",
       "width": 88,
-      "reset": "0000000000000002000008h",
-      "description": "Interrupt event bit field for IRQ. If any bit in this register is 1, then the IRQ pin is pulled low. Bytes 1 to 10 of this register are port-specific, but Byte 11(",
+      "reset": "0000000000000000000008h",
+      "description": "Interrupt event bit field for IRQ. If any bit in this register is 1, then the IRQ pin is pulled low. Only the interrupt events enabled in INT_MASK1 (0x16) will be asserted.",
+      "source_page": 19,
       "fields": [
         {
           "bit_field": "87-83",
@@ -83,87 +111,24 @@
           "name": "I2C Controller NACked",
           "access_type": "R",
           "reset": "0h",
-          "description": "A transaction on the I2C Controller was NACKed."
+          "description": "A transaction on the I2C Controller was NACKed"
         },
         {
           "bit_field": "81-81",
           "name": "Ready for Patch",
           "access_type": "R",
           "reset": "0h",
-          "description": "Device ready for a patch bundle from the host."
+          "description": "The device is ready for a patch bundle from the host"
         },
         {
           "bit_field": "80-80",
           "name": "Patch Loaded",
           "access_type": "R",
           "reset": "0h",
-          "description": "Patch was loaded to the device."
+          "description": "A patch has been loaded to the device"
         },
         {
-          "bit_field": "79-79",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "78-78",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "77-77",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "76-76",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "75-74",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "73-73",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "72-72",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "71-71",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "70-70",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "69-67",
+          "bit_field": "79-67",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -174,52 +139,17 @@
           "name": "MBRD Buffer Ready",
           "access_type": "R",
           "reset": "0h",
-          "description": "Receive memory buffer full and ready to be read using the 'MBRd'  command."
+          "description": "The memory buffer is full and ready to be read using the 'MBRd' command"
         },
         {
           "bit_field": "65-65",
           "name": "TX Memory Buffer Empty",
           "access_type": "R",
           "reset": "0h",
-          "description": "Transmit memory buffer empty."
+          "description": "The transmit memory buffer is empty"
         },
         {
-          "bit_field": "64-64",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "63-63",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "62-62",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "62-59",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "61-61",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "61-61",
+          "bit_field": "64-61",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -230,24 +160,10 @@
           "name": "Liquid Detection",
           "access_type": "R",
           "reset": "0h",
-          "description": "Asserted when Liquid Detection is detected or removed. Read 0x98 to determine the state of Liquid Detection."
+          "description": "The Liquid Detection state has changed."
         },
         {
-          "bit_field": "60-60",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "59-59",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "58-58",
+          "bit_field": "59-58",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -258,38 +174,17 @@
           "name": "Ext DCDC Source Safe State",
           "access_type": "R",
           "reset": "0h",
-          "description": "Used for EC controlled battery charger or DC/DC applications to indicate when the PD controller is no longer going to act as a source. This interrupt will be set when acting as a source and receiving/ sending an Accept message to a Power Role Swap."
+          "description": "The PD Controller is no longer acting as a source, either by initiating or accepting a Power Role Swap"
         },
         {
           "bit_field": "56-56",
           "name": "Ext DCDC Sink Safe State",
           "access_type": "R",
           "reset": "0h",
-          "description": "Used for EC controlled battery charger or DC/DC applications to indicate when the PD controller is no longer going to act as a sin. This interrupt will be set when acting as a sink and receiving/sending an Accept message to a Power Role Swap. This interrupt will also be set when acting as a sink and receiving an Explicit PD Contract Accept from the connected source."
+          "description": "A Power Role Swap has been accepted and the PD Controller is no longer acting as a sink, or an Explicit PD Contract Accept has been received while acting as a sink"
         },
         {
-          "bit_field": "55-55",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "54-54",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "53-53",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "52-52",
+          "bit_field": "55-52",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -297,34 +192,13 @@
         },
         {
           "bit_field": "51-51",
-          "name": "RESERVED",
+          "name": "Discover Mode Completed",
           "access_type": "R",
           "reset": "0h",
-          "description": "Reserved"
+          "description": "The Discover Modes process has completed"
         },
         {
-          "bit_field": "50-50",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "49-49",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "48-48",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "47-47",
+          "bit_field": "50-47",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -335,17 +209,10 @@
           "name": "Unable to Source Error",
           "access_type": "R",
           "reset": "0h",
-          "description": "The Source was unable to increase the voltage to the negotiated voltage of the contract."
+          "description": "The Source was unable to increase the voltage to the negotiated contract voltage"
         },
         {
-          "bit_field": "45-45",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "44-44",
+          "bit_field": "45-44",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -356,14 +223,14 @@
           "name": "Plug Early Notification",
           "access_type": "R",
           "reset": "0h",
-          "description": "A connection has been detected but not debounced."
+          "description": "A connection has been detected but not yet debounced"
         },
         {
           "bit_field": "42-42",
           "name": "Sink Transition Completed",
           "access_type": "R",
           "reset": "0h",
-          "description": "This event only occurs when in source mode  (PD_STATUS.PresentPDRole = 1b). It occurs tSrcTransition (ms)  after sending an Accept message to a Request message, just before sending the PS_RDY message."
+          "description": "A source power transition has been initiated tSrcTransition ms after sending an Accept message to a Port Partner Request message"
         },
         {
           "bit_field": "41-40",
@@ -377,14 +244,14 @@
           "name": "Message Data Error",
           "access_type": "R",
           "reset": "0h",
-          "description": "An erroneous message was received."
+          "description": "An erroneous message has been received from the Port Partner"
         },
         {
           "bit_field": "38-38",
           "name": "Protocol Error",
           "access_type": "R",
           "reset": "0h",
-          "description": "An unexpected message was received from the partner device."
+          "description": "An unexpected message has been received from the Port Partner"
         },
         {
           "bit_field": "37-37",
@@ -395,38 +262,38 @@
         },
         {
           "bit_field": "36-36",
-          "name": "Missing Get Capabilities Message Error",
+          "name": "Missing Get Capabalities Message Error",
           "access_type": "R",
           "reset": "0h",
-          "description": "The partner device did not respond to the Get_Sink_Cap or Get_Source_Cap message that was sent."
+          "description": "The Port Partner did not respond to a Get_Sink_Cap or Get_Source_Cap message"
         },
         {
           "bit_field": "35-35",
           "name": "Power Event Occurred Error",
           "access_type": "R",
           "reset": "0h",
-          "description": "An OVP, or ILIM event occurred on VBUS. Or a TSD event occurred."
+          "description": "An OVP, ILIM, or TSD event on VBUS has been detected."
         },
         {
           "bit_field": "34-34",
           "name": "Can Provide Voltage or Current Later Error",
           "access_type": "R",
           "reset": "0h",
-          "description": "The USB PD Source can provide acceptable voltage and current, but not at the present time. A 'wait' message was sent or received."
+          "description": "A \"Wait\" message has been sent or received indicating the Source cannot provide acceptable power at the present time"
         },
         {
           "bit_field": "33-33",
           "name": "Cannot Provide Voltage or Current Error",
           "access_type": "R",
           "reset": "0h",
-          "description": "The USB PD Source cannot provide an acceptable voltage and/or current. A Reject message was sent to the Sink or a Capability Mismatch was received from the Sink."
+          "description": "The USB PD Source cannot provide an acceptable voltage and/or current. A Reject message has been sent to the Sink or a Capability Mismatch has been received from the Sink"
         },
         {
           "bit_field": "32-32",
           "name": "Device Incompatible Error",
           "access_type": "R",
           "reset": "0h",
-          "description": "When set to 1, a USB PD device with an incompatible specification version was connected. Or the partner device is not USB PD capable."
+          "description": "A USB PD device with an incompatible specification version has been connected, or the Port Partner is not USB PD capable"
         },
         {
           "bit_field": "31-31",
@@ -443,7 +310,14 @@
           "description": "Set whenever a non-zero value in CMD1 register is set to zero or ! CMD."
         },
         {
-          "bit_field": "29-28",
+          "bit_field": "29-29",
+          "name": "MIDB Received",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "A Manufacturer Info message has been received"
+        },
+        {
+          "bit_field": "28-28",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -454,14 +328,14 @@
           "name": "PD Status Updated",
           "access_type": "R",
           "reset": "0h",
-          "description": "Set whenever contents of PD_STATUS register (0x40) change."
+          "description": "The contents of the PD_STATUS (0x40) register have changed"
         },
         {
           "bit_field": "26-26",
           "name": "Status Updated",
           "access_type": "R",
           "reset": "0h",
-          "description": "Set whenever contents of STATUS register (0x1A) change."
+          "description": "The contents of the STATUS (0x1A) register have changed"
         },
         {
           "bit_field": "25-25",
@@ -475,14 +349,14 @@
           "name": "Power Status Updated",
           "access_type": "R",
           "reset": "0h",
-          "description": "Set whenever contents of POWER_STATUS register (0x3F) change."
+          "description": "The contents of the POWER_STATUS (0x3F) register have changed"
         },
         {
           "bit_field": "23-23",
           "name": "Power Path Switch Changed",
           "access_type": "R",
           "reset": "0h",
-          "description": "Set whenever contents of POWER_PATH_STATUS register (0x26)  changes."
+          "description": "The contents of the POWER_PATH_STATUS (0x26) register have changed"
         },
         {
           "bit_field": "22-22",
@@ -496,14 +370,14 @@
           "name": "USB Host No Longer Present",
           "access_type": "R",
           "reset": "0h",
-          "description": "Set when STATUS.UsbHostPresent transitions to anything other than 11b."
+          "description": "The UsbHostPresent field in the STATUS register has transitioned to a value other than 11b"
         },
         {
           "bit_field": "20-20",
           "name": "USB Host Present",
           "access_type": "R",
           "reset": "0h",
-          "description": "Set when STATUS.UsbHostPresent transitions to 11b."
+          "description": "The UsbHostPresent field in the STATUS register has transitioned to 11b"
         },
         {
           "bit_field": "19-19",
@@ -514,17 +388,17 @@
         },
         {
           "bit_field": "18-18",
-          "name": "Data Swap Requested",
+          "name": "Data Role Swap Requested",
           "access_type": "R",
           "reset": "0h",
-          "description": "A DR swap was requested by the Port Partner."
+          "description": "A DR Swap has been requested by the Port Partner"
         },
         {
           "bit_field": "17-17",
-          "name": "Power Swap Requested",
+          "name": "Power Role Swap Requested",
           "access_type": "R",
           "reset": "0h",
-          "description": "A PR swap was requested by the Port Partner."
+          "description": "A PR Swap has been requested by the Port Partner"
         },
         {
           "bit_field": "16-16",
@@ -538,38 +412,31 @@
           "name": "Sink Cap Message Received",
           "access_type": "R",
           "reset": "0h",
-          "description": "Sink Cap Message Received"
+          "description": "A Sink Capabilities message has been received from the Port Partner"
         },
         {
           "bit_field": "14-14",
-          "name": "Source Capabilities Message Received",
+          "name": "Source Capabalities Message Received",
           "access_type": "R",
           "reset": "0h",
-          "description": "This is asserted when a Source Capabilities message is received from the Port Partner."
+          "description": "A Source Capabilities message has been received from the Port Partner"
         },
         {
           "bit_field": "13-13",
           "name": "New Contract as Provider",
           "access_type": "R",
           "reset": "0h",
-          "description": "An RDO from the far-end device has been accepted and the PD Controller is a Source. This is asserted after the PS_RDY message has been sent. See ACTIVE_CONTRACT_PDO register (0x34) and ACTIVE_CONTRACT_RDO register (0x35) for details."
+          "description": "A PD contract has been formed as a Source. This is asserted after the PS_RDY message has been sent. See ACTIVE_CONTRACT_PDO (0x34) register and ACTIVE_CONTRACT_RDO (0x35) register for details"
         },
         {
           "bit_field": "12-12",
           "name": "New Contract as Consumer",
           "access_type": "R",
           "reset": "0h",
-          "description": "Far-end source has accepted an RDO sent by the PD Controller as a Sink. See ACTIVE_CONTRACT_PDO register (0x34) and ACTIVE_CONTRACT_RDO register (0x35) for details."
+          "description": "A PD contract has been formed as a Sink. This is asserted after the PS_RDY message has been sent. See ACTIVE_CONTRACT_PDO (0x34) register and ACTIVE_CONTRACT_RDO (0x35) register for details"
         },
         {
-          "bit_field": "11-11",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "10-10",
+          "bit_field": "11-10",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -580,24 +447,10 @@
           "name": "Overcurrent",
           "access_type": "R",
           "reset": "0h",
-          "description": "Set whenever an Overcurrent field (VBUS or VCONN) in the POWER_PATH_STATUS register (0x26) changes."
+          "description": "An Overcurrent field (VBUS or VCONN) in the POWER_PATH_STATUS (0x26) register has changed"
         },
         {
-          "bit_field": "8-8",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "7-7",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "6-6",
+          "bit_field": "8-6",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -608,21 +461,21 @@
           "name": "Data Swap Complete",
           "access_type": "R",
           "reset": "0h",
-          "description": "A Data Role swap has completed. See STATUS register (0x1A) and PD_STATUS register (0x40) for port state."
+          "description": "A Data Role Swap has completed. See STATUS (0x1A) register and PD_STATUS (0x40) register for port state."
         },
         {
           "bit_field": "4-4",
           "name": "Power Swap Complete",
           "access_type": "R",
           "reset": "0h",
-          "description": "A Power role swap has completed. See STATUS register (0x1A) and PD_STATUS register (0x40) for port state."
+          "description": "A Power Role Swap has completed. See STATUS (0x1A) register and PD_STATUS (0x40) register for port state."
         },
         {
           "bit_field": "3-3",
           "name": "Plug Insert or Removal",
           "access_type": "R",
           "reset": "1h",
-          "description": "USB Plug Status has Changed. See Status register for more plug details."
+          "description": "USB Plug Status has changed. See STATUS (0x1A) register for more plug details."
         },
         {
           "bit_field": "2-2",
@@ -649,10 +502,11 @@
     },
     {
       "offset": "16h",
-      "name": "Interrupt Mask for I2C1",
+      "name": "Interrupt Mask for I2Ct_IRQ",
       "width": 88,
-      "reset": "0000000000000000030000h",
-      "description": "Interrupt mask bit field for INT_EVENT1. A bit in INT_EVENT1 cannot be set if it is cleared in this register. Bytes 1 to 10 of this register are port-specific, but Byte 11(",
+      "reset": "0000000000000000000000h",
+      "description": "Interrupt mask bit field for INT_EVENT1. Bytes 1 to 10 of this register must be configured through the Application Customization Tool to enable the corresponding interrupt events. For Byte 11, Bit 1 is enabled by default - It is recommended to set the remaining implemented bits as needed by the host application.",
+      "source_page": 21,
       "fields": [
         {
           "bit_field": "87-83",
@@ -666,150 +520,45 @@
           "name": "I2C Controller NACKed",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "I2C Controller NACKed"
+          "description": "Set to enable notification when a transaction on the I2C Controller is NACKed"
         },
         {
           "bit_field": "81-81",
           "name": "Ready for Patch",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Ready for Patch"
+          "description": "Set to enable notification when the device is ready for a patch bundle from the host. This bit is set by default by the device."
         },
         {
           "bit_field": "80-80",
           "name": "Patch Loaded",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Patch Loaded"
+          "description": "Set to enable notification when a patch is loaded"
         },
         {
-          "bit_field": "79-79",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "78-78",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "77-77",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "76-76",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "75-75",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "74-74",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "73-73",
+          "bit_field": "79-67",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "72-72",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "71-71",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "70-70",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "69-69",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "68-68",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "67-67",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
           "bit_field": "66-66",
           "name": "MBRD Buffer Ready",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "MBRD Buffer Ready"
+          "description": "Set to enable notification when the memory buffer is full and ready to be read using the 'MBRd' command"
         },
         {
           "bit_field": "65-65",
           "name": "TX Memory Buffer Empty",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "TX Memory Buffer Empty"
+          "description": "Set to enable notification when the transmit memory buffer is empty"
         },
         {
-          "bit_field": "64-64",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "63-63",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "62-62",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "61-61",
+          "bit_field": "64-61",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -820,94 +569,45 @@
           "name": "Liquid Detection",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Liquid Detection"
+          "description": "Set to enable notification when the Liquid Detection state changes"
         },
         {
-          "bit_field": "59-59",
+          "bit_field": "59-58",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "58-58",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "57-57",
           "name": "Ext DCDC Source Safe State",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Ext DCDC Source Safe State"
+          "description": "Set to enable notification when the PD Controller is no longer going to act as a source, either by initiating or accepting a Power Role Swap"
         },
         {
           "bit_field": "56-56",
           "name": "Ext DCDC Sink Safe State",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Ext DCDC Sink Safe State"
+          "description": "Set to enable notification when a Power Role Swap is accepted and the PD Controller is no longer acting as a sink, or when an Explicit PD Contract Accept is received while acting as a sink"
         },
         {
-          "bit_field": "55-55",
+          "bit_field": "55-52",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "54-54",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "53-53",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "52-52",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "51-51",
-          "name": "RESERVED",
+          "name": "Discover mode Completed",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Set to enable notification when the Discover Modes process has completed"
         },
         {
-          "bit_field": "50-50",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "49-49",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "48-48",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "47-47",
+          "bit_field": "50-47",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -918,45 +618,31 @@
           "name": "Unable to Source Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Unable to Source Error"
+          "description": "Set to enable notification when the Source is unable to increase the voltage to the negotiated contract voltage"
         },
         {
-          "bit_field": "45-45",
+          "bit_field": "45-44",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "44-44",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
           "bit_field": "43-43",
           "name": "Plug Early Notification",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Plug Early Notification"
+          "description": "Set to enable notification when a connection is detected but not yet debounced"
         },
         {
           "bit_field": "42-42",
           "name": "Sink Transition Completed",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Sink Transition Completed"
+          "description": "Set to enable notification when a source power transition is initiated after accepting a Port Partner Request message"
         },
         {
-          "bit_field": "41-41",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "40-40",
+          "bit_field": "41-40",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -967,14 +653,14 @@
           "name": "Message Data Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Message Data Error"
+          "description": "Set to enable notification when an erroneous message is received from the Port Partner"
         },
         {
           "bit_field": "38-38",
           "name": "Protocol Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Protocol Error"
+          "description": "Set to enable notification when an unexpected message is received from the Port Partner"
         },
         {
           "bit_field": "37-37",
@@ -985,55 +671,62 @@
         },
         {
           "bit_field": "36-36",
-          "name": "Missing Get Capabilities Message Error",
+          "name": "Missing Get Capabalities Message Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Missing Get Capabilities Message Error"
+          "description": "Set to enable notification when the Port Partner does not respond to a Get_Sink_Cap or Get_Source_Cap message"
         },
         {
           "bit_field": "35-35",
           "name": "Power Event Occurred Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Event Occurred Error"
+          "description": "Set to enable notification when an OVP, ILIM, or TSD event on VBUS is detected"
         },
         {
           "bit_field": "34-34",
           "name": "Can Provide Voltage or Current Later Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Can Provide Voltage or Current Later Error"
+          "description": "Set to enable notification when a \"Wait\" message is sent or received for Source power availability"
         },
         {
           "bit_field": "33-33",
           "name": "Cannot Provide Voltage or Current Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Cannot Provide Voltage or Current Error"
+          "description": "Set to enable notification when the USB PD Source cannot provide an acceptable voltage and/or current"
         },
         {
           "bit_field": "32-32",
           "name": "Device Incompatible Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Device Incompatible Error"
+          "description": "Set to enable notification when a USB PD device with an incompatible specification version is connected, or the Port Partner is not USB PD capable"
         },
         {
           "bit_field": "31-31",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "30-30",
           "name": "CMD1 Complete",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "CMD1 Complete"
+          "description": "Set to enable notification when a CMD1 (0x08) register command has completed"
         },
         {
-          "bit_field": "29-28",
+          "bit_field": "29-29",
+          "name": "MIDB Received",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Set to enable notification when a Manufacturer Info message is received"
+        },
+        {
+          "bit_field": "28-28",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -1044,35 +737,35 @@
           "name": "PD Status Updated",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "PD Status Updated"
+          "description": "Set to enable notification when the contents of the PD_STATUS (0x40) register change"
         },
         {
           "bit_field": "26-26",
           "name": "Status Updated",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Status Updated"
+          "description": "Set to enable notification when the contents of the STATUS (0x1A) register change"
         },
         {
           "bit_field": "25-25",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "24-24",
           "name": "Power Status Updated",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Status Updated"
+          "description": "Set to enable notification when the contents of the POWER_STATUS (0x3F) register change"
         },
         {
           "bit_field": "23-23",
           "name": "Power Path Switch Changed",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Path Switch Changed"
+          "description": "Set to enable notification when the contents of the POWER_PATH_STATUS (0x26) register change"
         },
         {
           "bit_field": "22-22",
@@ -1086,14 +779,14 @@
           "name": "USB Host No Longer Present",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "USB Host No Longer Present"
+          "description": "Set to enable notification when the UsbHostPresent field in the STATUS register transitions to a value other than 11b"
         },
         {
           "bit_field": "20-20",
           "name": "USB Host Present",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "USB Host Present"
+          "description": "Set to enable notification when UsbHostPresent field in the STATUS register transitions to 11b"
         },
         {
           "bit_field": "19-19",
@@ -1104,101 +797,94 @@
         },
         {
           "bit_field": "18-18",
-          "name": "Data Swap Requested",
+          "name": "Data Role Swap Requested",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Data Swap Requested"
+          "description": "Set to enable notification when a DR Swap is requested by the Port Partner"
         },
         {
           "bit_field": "17-17",
-          "name": "Power Swap Requested",
+          "name": "Power Role Swap Requested",
           "access_type": "R/W",
-          "reset": "1h",
-          "description": "Power Swap Requested"
+          "reset": "0h",
+          "description": "Set to enable notification when a PR Swap is requested by the Port Partner"
         },
         {
-          "bit_field": "16-15",
+          "bit_field": "16-16",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
+        },
+        {
+          "bit_field": "15-15",
+          "name": "Sink Cap Message Received",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Set to enable notification when a Sink Capabilities message is received from the Port Partner"
         },
         {
           "bit_field": "14-14",
           "name": "Source Cap Message Received",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Source Cap Message Received"
+          "description": "Set to enable notification when a Source Capabilities message is received from the Port Partner"
         },
         {
           "bit_field": "13-13",
           "name": "New Contract as Provider",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "New Contract as Provider"
+          "description": "Set to enable notification when a PD contract is formed as a Source"
         },
         {
           "bit_field": "12-12",
           "name": "New Contract as Consumer",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "New Contract as Consumer"
+          "description": "Set to enable notification when a PD contract is formed as a Sink"
         },
         {
-          "bit_field": "11-11",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "10-10",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "9-9",
-          "name": "Overcurrent",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Overcurrent"
-        },
-        {
-          "bit_field": "8-7",
+          "bit_field": "11-10",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "6-6",
+          "bit_field": "9-9",
+          "name": "Overcurrent",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Set to enable notification when an Overcurrent field (VBUS or VCONN) in the POWER_PATH_STATUS (0x26) register changes"
+        },
+        {
+          "bit_field": "8-6",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "5-5",
           "name": "Data Swap Complete",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Data Swap Complete"
+          "description": "Set to enable notification when a Data Role Swap completes"
         },
         {
           "bit_field": "4-4",
           "name": "Power Swap Complete",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Swap Complete"
+          "description": "Set to enable notification when a Power Role Swap completes"
         },
         {
           "bit_field": "3-3",
           "name": "Plug Insert or Removal",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Plug Insert or Removal"
+          "description": "Set to enable notification when USB Plug Status changes"
         },
         {
           "bit_field": "2-2",
@@ -1212,7 +898,7 @@
           "name": "PD Hardreset",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "PD Hardreset"
+          "description": "Set to enable notification when a PD Hard Reset is performed"
         },
         {
           "bit_field": "0-0",
@@ -1225,10 +911,11 @@
     },
     {
       "offset": "18h",
-      "name": "Interrupt Clear for I2C1",
+      "name": "Interrupt Clear for I2Ct_IRQ",
       "width": 88,
       "reset": "0000000000000000000000h",
-      "description": "Interrupt clear bit field for INT_EVENT1. Writing 1 to a specific bit will clear that specific event in INT_EVENT1.",
+      "description": "Interrupt clear bit field for INT_EVENT1. Writing 1 to a specific bit will clear that specific event in INT_EVENT1. Bits set in this register are cleared from INT_EVENT1.",
+      "source_page": 23,
       "fields": [
         {
           "bit_field": "87-83",
@@ -1242,150 +929,45 @@
           "name": "I2C Controller NACKed",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "I2C Controller NACKed"
+          "description": "Write 1 to clear the I2C Controller NACK event"
         },
         {
           "bit_field": "81-81",
           "name": "Ready for Patch",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Ready for Patch"
+          "description": "Write 1 to clear the patch bundle ready event"
         },
         {
           "bit_field": "80-80",
           "name": "Patch Loaded",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Patch Loaded"
+          "description": "Write 1 to clear the patch loaded event"
         },
         {
-          "bit_field": "79-79",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "78-78",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "77-77",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "76-76",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "75-75",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "74-74",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "73-73",
+          "bit_field": "79-67",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "72-72",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "71-71",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "70-70",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "69-69",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "68-68",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "67-67",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
           "bit_field": "66-66",
           "name": "MBRD Buffer Ready",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "MBRD Buffer Ready"
+          "description": "Write 1 to clear the memory buffer full event"
         },
         {
           "bit_field": "65-65",
           "name": "TX Memory Buffer Empty",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "TX Memory Buffer Empty"
+          "description": "Write 1 to clear the transmit memory buffer empty event"
         },
         {
-          "bit_field": "64-64",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "63-63",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "62-62",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "61-61",
+          "bit_field": "64-61",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -1396,108 +978,45 @@
           "name": "Liquid Detection",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Liquid Detection"
+          "description": "Write 1 to clear the Liquid Detection state changed event"
         },
         {
-          "bit_field": "59-59",
+          "bit_field": "59-58",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "58-58",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "57-57",
           "name": "Ext DCDC Source Safe State",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Ext DCDC Source Safe State"
-        },
-        {
-          "bit_field": "57-55",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
+          "description": "Write 1 to clear the PD Controller no longer acting as source event"
         },
         {
           "bit_field": "56-56",
           "name": "Ext DCDC Sink Safe State",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Ext DCDC Sink Safe State"
+          "description": "Write 1 to clear the Power Role Swap accepted or Explicit PD Contract Accept received event"
         },
         {
-          "bit_field": "56-55",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "56-54",
+          "bit_field": "55-52",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
-        },
-        {
-          "bit_field": "55-54",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "53-53",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "52-52",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
         },
         {
           "bit_field": "51-51",
-          "name": "RESERVED",
+          "name": "Discover mode Completed",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Write 1 to clear the Discover Modes process completed event"
         },
         {
-          "bit_field": "50-50",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "49-49",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "48-48",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "47-47",
+          "bit_field": "50-47",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -1508,45 +1027,31 @@
           "name": "Unable to Source Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Unable to Source Error"
+          "description": "Write 1 to clear the Source unable to increase voltage to negotiated contract voltage event"
         },
         {
-          "bit_field": "45-45",
+          "bit_field": "45-44",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "44-44",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
           "bit_field": "43-43",
           "name": "Plug Early Notification",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Plug Early Notification"
+          "description": "Write 1 to clear the connection detected but not yet debounced event"
         },
         {
           "bit_field": "42-42",
           "name": "Sink Transition Completed",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Sink Transition Completed"
+          "description": "Write 1 to clear the source power transition initiated event"
         },
         {
-          "bit_field": "41-41",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "40-40",
+          "bit_field": "41-40",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -1557,14 +1062,14 @@
           "name": "Message Data Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Message Data Error"
+          "description": "Write 1 to clear the erroneous message received event"
         },
         {
           "bit_field": "38-38",
           "name": "Protocol Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Protocol Error"
+          "description": "Write 1 to clear the unexpected message received event"
         },
         {
           "bit_field": "37-37",
@@ -1575,55 +1080,62 @@
         },
         {
           "bit_field": "36-36",
-          "name": "Missing Get Capabilities Message Error",
+          "name": "Missing Get Capabalities Message Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Missing Get Capabilities Message Error"
+          "description": "Write 1 to clear the Port Partner Get_Sink_Cap or Get_Source_Cap no response event"
         },
         {
           "bit_field": "35-35",
           "name": "Power Event Occurred Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Event Occurred Error"
+          "description": "Write 1 to clear the OVP, ILIM, or TSD on VBUS event"
         },
         {
           "bit_field": "34-34",
           "name": "Can Provide Voltage or Current Later Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Can Provide Voltage or Current Later Error"
+          "description": "Write 1 to clear the Source power availability \"Wait\" event"
         },
         {
           "bit_field": "33-33",
           "name": "Cannot Provide Voltage or Current Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Cannot Provide Voltage or Current Error"
+          "description": "Write 1 to clear the Source capability mismatch event"
         },
         {
           "bit_field": "32-32",
           "name": "Device Incompatible Error",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Device Incompatible Error"
+          "description": "Write 1 to clear the incompatible or non-USB PD capable Port Partner connected event"
         },
         {
           "bit_field": "31-31",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "30-30",
           "name": "CMD1 Complete",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "CMD1 Complete"
+          "description": "Write 1 to clear the CMD1 command completed event"
         },
         {
-          "bit_field": "29-28",
+          "bit_field": "29-29",
+          "name": "MIDB Received",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Write 1 to clear the Manufacturer Info message received event"
+        },
+        {
+          "bit_field": "28-28",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -1634,35 +1146,35 @@
           "name": "PD Status Updated",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "PD Status Updated"
+          "description": "Write 1 to clear the PD_STATUS (0x40) register contents changed event"
         },
         {
           "bit_field": "26-26",
           "name": "Status Updated",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Status Updated"
+          "description": "Write 1 to clear the STATUS (0x1A) register contents changed event"
         },
         {
           "bit_field": "25-25",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "24-24",
           "name": "Power Status Updated",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Status Updated"
+          "description": "Write 1 to clear the POWER_STATUS (0x3F) register contents changed event"
         },
         {
           "bit_field": "23-23",
           "name": "Power Path Switch Changed",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Path Switch Changed"
+          "description": "Write 1 to clear the POWER_PATH_STATUS (0x26) register contents changed event"
         },
         {
           "bit_field": "22-22",
@@ -1676,14 +1188,14 @@
           "name": "USB Host No Longer Present",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "USB Host No Longer Present"
+          "description": "Write 1 to clear the UsbHostPresent field in the STATUS register transitioned to a value other than 11b event"
         },
         {
           "bit_field": "20-20",
           "name": "USB Host Present",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "USB Host Present"
+          "description": "Write 1 to clear the UsbHostPresent field in the STATUS register transitioned to 11b event"
         },
         {
           "bit_field": "19-19",
@@ -1694,101 +1206,94 @@
         },
         {
           "bit_field": "18-18",
-          "name": "Data Swap Requested",
+          "name": "Data Role Swap Requested",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Data Swap Requested"
+          "description": "Write 1 to clear the DR Swap requested event"
         },
         {
           "bit_field": "17-17",
-          "name": "Power Swap Requested",
+          "name": "Power Role Swap Requested",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Swap Requested"
+          "description": "Write 1 to clear the PR Swap requested event"
         },
         {
-          "bit_field": "16-15",
+          "bit_field": "16-16",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
+        },
+        {
+          "bit_field": "15-15",
+          "name": "Sink Cap Message Received",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Write 1 to clear the Sink Capabilities message received event"
         },
         {
           "bit_field": "14-14",
           "name": "Source Cap Message Received",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Source Cap Message Received"
+          "description": "Write 1 to clear the Source Capabilities message received event"
         },
         {
           "bit_field": "13-13",
           "name": "New Contract as Provider",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "New Contract as Provider"
+          "description": "Write 1 to clear the PD contract formed as Source event"
         },
         {
           "bit_field": "12-12",
           "name": "New Contract as Consumer",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "New Contract as Consumer"
+          "description": "Write 1 to clear the PD contract formed as Sink event"
         },
         {
-          "bit_field": "11-11",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "10-10",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "9-9",
-          "name": "Overcurrent",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Overcurrent"
-        },
-        {
-          "bit_field": "8-7",
+          "bit_field": "11-10",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "6-6",
+          "bit_field": "9-9",
+          "name": "Overcurrent",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Write 1 to clear the Overcurrent field change event"
+        },
+        {
+          "bit_field": "8-6",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Reserved"
         },
         {
           "bit_field": "5-5",
-          "name": "Data Swap Complete",
+          "name": "Data Role Swap Complete",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Data Swap Complete"
+          "description": "Write 1 to clear the Data Role Swap Completed event"
         },
         {
           "bit_field": "4-4",
-          "name": "Power Swap Complete",
+          "name": "Power Role Swap Complete",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Power Swap Complete"
+          "description": "Write 1 to clear the Power Role Swap Completed event"
         },
         {
           "bit_field": "3-3",
           "name": "Plug Insert or Removal",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Plug Insert or Removal"
+          "description": "Write 1 to clear the USB Plug Status Changed event"
         },
         {
           "bit_field": "2-2",
@@ -1802,7 +1307,7 @@
           "name": "PD Hardreset",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "PD Hardreset"
+          "description": "Write 1 to clear the PD Hard Reset event"
         },
         {
           "bit_field": "0-0",
@@ -1818,24 +1323,11 @@
       "name": "Status",
       "width": 40,
       "reset": "0000000000h",
-      "description": "Status bit field for non-interrupt events. Table 3-10. Status Register Field Descriptions",
+      "description": "Status bit field for events.",
+      "source_page": 25,
       "fields": [
         {
-          "bit_field": "39-34",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "33-32",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "31-31",
+          "bit_field": "39-31",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -1846,10 +1338,10 @@
           "name": "SOC Ack Timeout",
           "access_type": "R",
           "reset": "0h",
-          "description": "Indicates whether the attached SoC has responded timely. 0h = SoC has responded timely 1h = SoC has not responded timely",
+          "description": "Indicates whether the attached SoC has responded timely. Refer the SoC spec for the timeout value. The device has it set to 100ms.",
           "values": {
-            "0h": "SoC has responded timely",
-            "1h": "SoC has not responded timely"
+            "0h": "SoC has responded within this time",
+            "1h": "SoC has not responded within this time"
           }
         },
         {
@@ -1864,7 +1356,7 @@
           "name": "BIST",
           "access_type": "R",
           "reset": "0h",
-          "description": "Indicates if a BIST procedure is in progress. 0h = No BIST in progress 1h = BIST in progress",
+          "description": "Indicates if a BIST procedure is in progress.",
           "values": {
             "0h": "No BIST in progress",
             "1h": "BIST in progress"
@@ -1882,7 +1374,7 @@
           "name": "Acting as Legacy",
           "access_type": "R",
           "reset": "0h",
-          "description": "Indicates when PD Controller has gone into a mode where it is acting like a legacy (non PD) device. It can take approximately 10 seconds for the PD controller to determine that it is attached to a legacy source or sink. 0h = PD Controller is not in a legacy (non PD) mode 1h = PD Controller is acting like a legacy sink 2h = PD Controller is acting like a legacy source 3h = Acting as legacy sink due to dead-battery.",
+          "description": "Indicates when PD Controller has gone into a mode where it is acting like a legacy (non PD) device. It can take approximately 10 seconds for the PD controller to determine that it is attached to a legacy source or sink.",
           "values": {
             "0h": "PD Controller is not in a legacy (non PD) mode",
             "1h": "PD Controller is acting like a legacy sink",
@@ -1895,7 +1387,7 @@
           "name": "USB Host Present",
           "access_type": "R",
           "reset": "0h",
-          "description": "USB host attachment status. 0h = No host present 1h = Attached source is not data capable 2h = Attached source is not USB PD capable 3h = Host present",
+          "description": "USB host attachment status.",
           "values": {
             "0h": "No host present",
             "1h": "Attached source is not data capable",
@@ -1908,7 +1400,7 @@
           "name": "VBUS Status",
           "access_type": "R",
           "reset": "0h",
-          "description": "Indicates the present state of VBUS. 0h = At vSafe0V (less than 0.8V)  1h = At vSafe5V (4.75V to 5.5V)  2h = Within expected limits 3h = Not within any of the other specified ranges",
+          "description": "Indicates the present state of VBUS.",
           "values": {
             "0h": "At vSafe0V (less than 0.8V)",
             "1h": "At vSafe5V (4.75V to 5.5V)",
@@ -1928,7 +1420,7 @@
           "name": "Data Role",
           "access_type": "R",
           "reset": "0h",
-          "description": "PD controller data role. This is only valid once there is a connection. 0h = Upward-facing port (UFP)  1h = Downward-facing port (DFP)",
+          "description": "PD controller data role. This is only valid once there is a connection.",
           "values": {
             "0h": "Upward-facing port (UFP)",
             "1h": "Downward-facing port (DFP)"
@@ -1939,7 +1431,7 @@
           "name": "Port Role",
           "access_type": "R",
           "reset": "0h",
-          "description": "Current state of PD Controller CCx terminations. This also indicates the PD Controller Power Role, once connected. This bit does not toggle during Unattached.* state transitions. 0h = PD Controller is in the Sink role 1h = PD Controller is Source (CCx pull-up active)",
+          "description": "Current state of PD Controller CCx terminations. This also indicates the PD Controller Power Role, once connected. This bit does not toggle during Unattached state transitions.",
           "values": {
             "0h": "PD Controller is in the Sink role",
             "1h": "PD Controller is Source (CCx pull-up active)"
@@ -1950,7 +1442,7 @@
           "name": "Plug Orientation",
           "access_type": "R",
           "reset": "0h",
-          "description": "Plug orientation indicator. Indicates port orientation when known  (requires connection). 0h = Upside-up orientation (plug CC on CC1)  1h = Upside-down orientation (plug CC on CC2)",
+          "description": "Plug orientation indicator. Indicates port orientation when known (requires connection).",
           "values": {
             "0h": "Upside-up orientation (plug CC on CC1)",
             "1h": "Upside-down orientation (plug CC on CC2)"
@@ -1961,14 +1453,14 @@
           "name": "Connection State",
           "access_type": "R",
           "reset": "0h",
-          "description": "Details of a connected plug. 0h = No connection 1h = Port is disabled 2h = Audio connection (Ra/Ra)  3h = Debug connection (Rd/Rd)  4h = No connection Ra detected (Ra but no Rd)  5h = Reserved (may be used for Rp/Rp Debug connection)  6h = Connection present no Ra detected 7h = Connection present Ra detected",
+          "description": "Details of a connected plug.",
           "values": {
             "0h": "No connection",
             "1h": "Port is disabled",
-            "2h": "Audio connection (Ra/Ra)",
+            "2h": "Corrosion Mitigaion (Ra/Ra)",
             "3h": "Debug connection (Rd/Rd)",
             "4h": "No connection Ra detected (Ra but no Rd)",
-            "5h": "Reserved (may be used for Rp/Rp Debug connection)",
+            "5h": "Debug connection (Rp/Rp)",
             "6h": "Connection present no Ra detected",
             "7h": "Connection present Ra detected"
           }
@@ -1978,7 +1470,7 @@
           "name": "Plug Present",
           "access_type": "R",
           "reset": "0h",
-          "description": "Status of the plug 0h = No plug is connected 1h = A plug is connected",
+          "description": "Status of the plug",
           "values": {
             "0h": "No plug is connected",
             "1h": "A plug is connected"
@@ -1991,14 +1483,15 @@
       "name": "Power Path Status",
       "width": 40,
       "reset": "0000000000h",
-      "description": "Power Path Status. Table 3-11. Power Path Status Register Field Descriptions",
+      "description": "Power Path Status. This is a hardware dependent register.",
+      "source_page": 27,
       "fields": [
         {
           "bit_field": "39-38",
           "name": "Power Source",
           "access_type": "R",
           "reset": "0h",
-          "description": "Indicates current PD Controller power source. NOTE: Since the Dead Battery flag forces PD Controller to be powered from VBUS,  only 10b is valid when this flag is set. Any other setting indicates that the Dead Battery flag is not set. 0h = Reserved 1h = PD Controller is powered from VIN_3V3 2h = PD Controller is powered from VBUS 3h = Reserved",
+          "description": "Indicates current PD Controller power source. NOTE: Since the Dead Battery flag forces PD Controller to be powered from VBUS, only 10b is valid when this flag is set. Any other setting indicates that the Dead Battery flag is not set.",
           "values": {
             "0h": "Reserved",
             "1h": "PD Controller is powered from VIN_3V3",
@@ -2032,24 +1525,10 @@
           "name": "PP1 Overcurrent",
           "access_type": "R",
           "reset": "0h",
-          "description": "PP_5V1 overcurrent indicator. Asserted if an overcurrent conditions exists on PP1 switch (PP_5V1)."
+          "description": "PP5V overcurrent indicator. Asserted if an overcurrent conditions exists on PP1 switch (PP5V)."
         },
         {
-          "bit_field": "27-21",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "20-18",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "17-15",
+          "bit_field": "27-15",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -2060,7 +1539,7 @@
           "name": "PP3 Switch",
           "access_type": "R",
           "reset": "0h",
-          "description": "Indicates current state of PP3 (PP_EXT1). 0h = PP3 switch disabled 1h = PP3 switch currently disabled due to fault 2h = PP3 switch enabled (system output)  3h = PP3 switch enabled (system input)",
+          "description": "Indicates current state of PP3 (PP_EXT).",
           "values": {
             "0h": "PP3 switch disabled",
             "1h": "PP3 switch currently disabled due to fault",
@@ -2080,7 +1559,7 @@
           "name": "PP1 Switch",
           "access_type": "R",
           "reset": "0h",
-          "description": "Indicates current state of PP1 switch (PP_5V1). 0h = PP1 switch disabled 1h = PP1 switch currently disabled due to fault 2h = PP1 switch enabled (system output)",
+          "description": "Indicates current state of PP1 switch (PP5V).",
           "values": {
             "0h": "PP1 switch disabled",
             "1h": "PP1 switch currently disabled due to fault",
@@ -2099,7 +1578,7 @@
           "name": "PPCable1 Switch",
           "access_type": "R",
           "reset": "0h",
-          "description": "Indicates current state of PP_CABLE1 switch. 0h = PP_CABLE1 switch disabled 1h = PP_CABLE1 switch currently disabled 2h = PP_CABLE1 switch CC1 enabled (system output)  3h = PP_CABLE1 switch CC2 enabled (system output)",
+          "description": "Indicates current state of PP_CABLE1 switch.",
           "values": {
             "0h": "PP_CABLE1 switch disabled",
             "1h": "PP_CABLE1 switch currently disabled",
@@ -2110,63 +1589,112 @@
       ]
     },
     {
-      "offset": "28h",
-      "name": "Port Configuration",
-      "width": 128,
-      "reset": "000000000000000000000000002F4802h",
-      "description": "Configuration for port-specific hardware. This register configures hardware that is specific for each port and in most cases will not change in normal operation or will not require immediate action if changed. Any modifications to this register will cause a port disconnect and reconnect with the new settings. Initialized by Application Customization. Table 3-12. Port Configuration Register Field Descriptions",
+      "offset": "27h",
+      "name": "Global System Configuration",
+      "width": 116,
+      "reset": "00000000000000000000000028101h",
+      "description": "Global system configuration (all ports). This register contains configuration bits that define hardware that is common to all ports and in most cases will not change in normal operation or will not require immediate action if changed. Any modifications to this register will cause a port disconnect and reconnect with the new settings. Initialized by Application Customization.",
+      "source_page": 28,
       "fields": [
         {
-          "bit_field": "127-96",
+          "bit_field": "115-24",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "95-80",
+          "bit_field": "23-22",
+          "name": "RCP Threshold",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Threshold used for RCP on PP_EXT.",
+          "values": {
+            "0h": "6 mV (nominal)",
+            "1h": "8 mV (nominal)",
+            "2h": "10 mV (nominal)",
+            "3h": "12 mV (nominal)"
+          }
+        },
+        {
+          "bit_field": "21-19",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "79-73",
+          "bit_field": "18-16",
+          "name": "PP3 Config",
+          "access_type": "R/W",
+          "reset": "2h",
+          "description": "PP3 configuration. This register configures PP3 switch controls.",
+          "values": {
+            "0h": "PP3 not used and disabled",
+            "1h": "PP3 is a Source (output)",
+            "2h": "PP3 is a Sink (input)",
+            "3h": "PP3 is sink but waits for 'SRDY'",
+            "4h": "PP3 is bi-directional",
+            "5h": "PP3 is bi-directional but waits for 'SRDY'"
+          }
+        },
+        {
+          "bit_field": "15-14",
+          "name": "ILIM Over Shoot",
+          "access_type": "R/W",
+          "reset": "2h",
+          "description": "PP_5V ILIM configuration. Controls the amount of overshoot used by the FW to select the current limit for the PP5V to VBUS.",
+          "values": {
+            "0h": "No additional overshoot margin",
+            "1h": "Overshoot margin of at least 100 mA",
+            "2h": "Overshoot margin of at least 200 mA",
+            "3h": "Overshoot margin of at least 500 mA"
+          }
+        },
+        {
+          "bit_field": "13-11",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "72-72",
+          "bit_field": "10-8",
+          "name": "PP1 Config",
+          "access_type": "R/W",
+          "reset": "1h",
+          "description": "PP1 configuration (PP_5V).",
+          "values": {
+            "0h": "Not used (disabled)",
+            "1h": "PP1 configured as source"
+          }
+        },
+        {
+          "bit_field": "7-1",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "71-64",
-          "name": "RESERVED",
+          "bit_field": "0-0",
+          "name": "PP Cable1 Switch Config",
           "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
+          "reset": "1h",
+          "description": "Enable PP_CABLE1. If this bit is asserted the PD controller will enable VCONN on PP_CABLE1 when required for USB specification compliance."
+        }
+      ]
+    },
+    {
+      "offset": "28h",
+      "name": "Port Configuration",
+      "width": 136,
+      "reset": "0000000000000000000000000001220002h",
+      "description": "Configuration for port-specific hardware. This register configures hardware that is specific for each port and in most cases will not change in normal operation or will not require immediate action if changed. Any modifications to this register will cause a port disconnect and reconnect with the new settings. Initialized by Application Customization.",
+      "source_page": 29,
+      "fields": [
         {
-          "bit_field": "63-48",
-          "name": "VBUS For Valid PPS Status",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "VBUS For Valid PPS Status"
-        },
-        {
-          "bit_field": "47-32",
-          "name": "APDO VBUS Uvp TripPoint Offset",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "APDO VBUS Uvp TripPoint Offset"
-        },
-        {
-          "bit_field": "31-31",
+          "bit_field": "135-31",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -2177,21 +1705,33 @@
           "name": "APDO ILIM Over Shoot",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "APDO ILIM Over Shoot"
+          "description": "Current limit overshoot for APDO contracts. Configures the current limit overshoot when power role is source and negotiated PD contract is variable type. This field is used to increase the current limit configuration of a supported BQ device.",
+          "values": {
+            "0h": "25mA overshoot for APDO current",
+            "1h": "50mA above negotiated variable PDO current",
+            "2h": "75mA above negotiated variable PDO current",
+            "3h": "Static 2900mA current limit"
+          }
         },
         {
           "bit_field": "28-27",
           "name": "APDO VBUS UVP Threshold",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "APDO VBUS UVP Threshold"
+          "description": "VBUS UVP threshold for APDO contracts. Configures the VBUS UVP threshold when power role is source and negotiated PDO contract is variable type.",
+          "values": {
+            "0h": "90% below negotiated variable PDO voltage",
+            "1h": "88% below negotiated variable PDO voltage",
+            "2h": "92% below negotiated variable PDO voltage",
+            "3h": "Reserved"
+          }
         },
         {
           "bit_field": "26-24",
           "name": "VBUS Sink UVP Trip HV",
           "access_type": "R/W",
-          "reset": "0h",
-          "description": "VBUS disconnect when power role is sink. The disconnect threshold is set to (1-VBUS_SinkUvpTripHV)*(min expected VBUS). The 000b setting follows the USB-C specification requirements. Use a non- zero value for additional margin. 0h = 5%  1h = 10%  2h = 15%  3h = 20%  4h = 25%  5h = 30%  6h = 40%  7h = 50%",
+          "reset": "1h",
+          "description": "VBUS disconnect when power role is sink. The disconnect threshold is set to (1-VBUS_SinkUvpTripHV)*(min expected VBUS). The 000b setting follows the USB-C specification requirements. Use a non- zero value for additional margin.",
           "values": {
             "0h": "5%",
             "1h": "10%",
@@ -2215,12 +1755,12 @@
           "name": "OVP for PP5V",
           "access_type": "R/W",
           "reset": "2h",
-          "description": "VBUS OVP settings while sourcing from PP5V. This applies while sourcing through PP1 or PP2. See data-sheet for voltage range. 0h = Use setting 0: 5.25 V (typical)  1h = Use setting 1: 5.5 V (typical)  2h = Use setting 2: 5.8 V (typical)  3h = Use setting 3: 6.1 V (typical)",
+          "description": "VBUS OVP settings while sourcing from PP1 (PP5V). See data- sheet for voltage range.",
           "values": {
-            "0h": "Use setting 0: 5.25 V (typical)",
-            "1h": "Use setting 1: 5.5 V (typical)",
-            "2h": "Use setting 2: 5.8 V (typical)",
-            "3h": "Use setting 3: 6.1 V (typical)"
+            "0h": "Use setting 0: 5.25 V",
+            "1h": "Use setting 1: 5.5 V",
+            "2h": "Use setting 2: 5.8 V",
+            "3h": "Use setting 3: 6.1 V"
           }
         },
         {
@@ -2234,13 +1774,13 @@
           "bit_field": "17-16",
           "name": "VBUS OVP Usage",
           "access_type": "R/W",
-          "reset": "3h",
-          "description": "OVP configuration settings. These two bits are used to select the OVP trip-point. The PD controller automatically computes the lowest threshold that does not overlap with the expected maximum voltage  (including maximum tolerance allowed by USB PD specification). The OVP trip-point will be set at the selected percentage of the computed threshold. 0h = 100%  1h = 105%  2h = 111%  3h = 114%",
+          "reset": "2h",
+          "description": "OVP configuration settings. These two bits are used to select the OVP trip-point. The PD controller automatically computes the lowest threshold that does not overlap with the expected maximum voltage (including maximum tolerance allowed by USB PD specification). The OVP trip-point will be set at the selected percentage of the computed threshold.",
           "values": {
-            "0h": "100%",
+            "0h": "0.41 V/ms (typical)",
             "1h": "105%",
             "2h": "111%",
-            "3h": "114%"
+            "3h": "3.39 V/ms (typical)"
           }
         },
         {
@@ -2252,24 +1792,30 @@
         },
         {
           "bit_field": "14-13",
-          "name": "RESERVED",
+          "name": "USB3 Rate",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Reserved"
+          "description": "USB3 configuration.",
+          "values": {
+            "0h": "USB3 not supported",
+            "1h": "USB3 Gen1 signaling rate supported",
+            "2h": "USB3 Gen2 signaling rate supported",
+            "3h": "Reserved"
+          }
         },
         {
           "bit_field": "12-12",
-          "name": "RESERVED",
+          "name": "DebugAccessory Support",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "RESERVED"
+          "description": "Assert this bit to enable DebugAccessory support."
         },
         {
           "bit_field": "11-11",
-          "name": "RESERVED",
+          "name": "USB Communication Capable",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Reserved"
+          "description": "Assert this bit in systems that are USB communications capable. This will be reported in the USB communcations capable field of PDO1."
         },
         {
           "bit_field": "10-10",
@@ -2283,10 +1829,11 @@
           "name": "TypeC Support Options",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Configuration for optional features. This register controls whether optional Type-C state machine states are supported. NOTE: These states are mutually-exclusive and these options only exist when specific Type-C state machines are used. 0h = No Type-C optional states are supported 1h = Try.SRC state is supported as a DRP 3h = Reserved",
+          "description": "Configuration for optional features. This register controls whether optional Type-C state machine states are supported. NOTE: These states are mutually-exclusive and these options only exist when specific Type-C state machines are used.",
           "values": {
             "0h": "No Type-C optional states are supported",
             "1h": "Try.SRC state is supported as a DRP",
+            "2h": "Try.SNK state is supported as a DRP",
             "3h": "Reserved"
           }
         },
@@ -2302,7 +1849,7 @@
           "name": "TypeC State machine",
           "access_type": "R/W",
           "reset": "2h",
-          "description": "Port Configuration. 0h = Sink state machine only 1h = Source state machine only 2h = DRP state machine 3h = Disabled",
+          "description": "Configuration of the Type-C State machine. This fields sets the default Type-C state of the PD controller.",
           "values": {
             "0h": "Sink state machine only",
             "1h": "Source state machine only",
@@ -2316,19 +1863,20 @@
       "offset": "29h",
       "name": "Port Control",
       "width": 32,
-      "reset": "03915052h",
-      "description": "Configuration bits affecting system policy. These bits may change during normal operation and are used for controlling the respective port. The PD Controller will not take immediate action upon writing. Changes made to this register will take effect the next time the appropriate policy is invoked. Initialized by Application Customization. Table 3-13. Port Control Register Field Descriptions",
+      "reset": "00015052h",
+      "description": "Configuration bits affecting system policy. These bits may change during normal operation and are used for controlling the respective port. The PD Controller will not take immediate action upon writing. Changes made to this register will take effect the next time the appropriate policy is invoked. Initialized by Application Customization.",
+      "source_page": 31,
       "fields": [
         {
           "bit_field": "31-30",
           "name": "Charger Detect Enable",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Configure the types of legacy chargers to detect. 0h = Do not detect any legacy chargers 1h = Detect BC 1.2 chargers 2h = Reserved do not use 3h = Detect BC 1.2 and proprietary legacy chargers",
+          "description": "Configure the types of legacy chargers to detect.",
           "values": {
             "0h": "Do not detect any legacy chargers",
-            "1h": "Detect BC 1.2 chargers",
-            "2h": "Reserved do not use",
+            "1h": "Detect BC 1.2 chargers only",
+            "2h": "Detect proprietary chargers only",
             "3h": "Detect BC 1.2 and proprietary legacy chargers"
           }
         },
@@ -2344,9 +1892,9 @@
           "name": "Charger Advertise Enable",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Configure the types of legacy chargers to emulate. 0h = Do not emulate any legacy charger 1h = BC 1.2 CDP only 2h = BC 1.2 DCP only 3h = Reserved 4h = Reserved 5h = DCP Auto 1 (2.7V and DCP)  6h = DCP Auto 2 (1.2V 2.7V and DCP)  7h = Reserved",
+          "description": "Configure the types of legacy chargers to emulate.",
           "values": {
-            "0h": "Do not emulate any legacy charger",
+            "0h": "BC 1.2 SDP only",
             "1h": "BC 1.2 CDP only",
             "2h": "BC 1.2 DCP only",
             "3h": "Reserved",
@@ -2358,38 +1906,24 @@
         },
         {
           "bit_field": "25-25",
-          "name": "RESERVED",
+          "name": "DCD Enable",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Reserved"
+          "description": "Enable for Data-Contact Detection. Assert this bit to enable Data Contact Detect as defined by BC 1.2 for sinks."
         },
         {
           "bit_field": "24-24",
           "name": "Resistor 15k Present",
           "access_type": "R/W",
-          "reset": "1h",
-          "description": "Configure D+ and D- termination. Assert this bit if there is a 15kOhm pull-down on D+ and D- (USB2.0 Host Phy pull-downs enabled). This should not be used for DCP or DCP Auto modes. 0h = System does NOT have 15 kOhm pull-down 1h = System has 15 kOhm pull-down",
+          "reset": "0h",
+          "description": "Configure D+ and D- termination. Assert this bit if there is a 15kOhm pull-down on D+ and D- (USB2.0 Host Phy pull-downs enabled). This should not be used for DCP or DCP Auto modes.",
           "values": {
             "0h": "System does NOT have 15 kOhm pull-down",
             "1h": "System has 15 kOhm pull-down"
           }
         },
         {
-          "bit_field": "23-23",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "22-22",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "21-21",
+          "bit_field": "23-21",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -2399,29 +1933,22 @@
           "bit_field": "20-20",
           "name": "Enable Current Monitor",
           "access_type": "R/W",
-          "reset": "1h",
-          "description": "Assert this bit to enable the current monitor (peak and average) that are read from the ADC_RESULTS register. While asserted the PD controller will remain in the active power mode."
+          "reset": "0h",
+          "description": "Assert this bit to enable the PP5V current monitor (peak and average) that are read from the ADC_RESULTS register. While asserted the PD controller will remain in the active power mode."
         },
         {
           "bit_field": "19-19",
           "name": "Unconstrained Power",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "External power configuration. This also sets the Unconstrained Power bit defined by USB PD. When this bit is changed from 1 to 0 the PD controller will not attempt a power role swap with the Port Partner. If a power role swap is desired the host should issue a  'SWSr' 4CC command. 0h = No external power 1h = External power present",
+          "description": "Unconstrained Power configuration. This also sets the Unconstrained Power bit defined by USB PD.",
           "values": {
-            "0h": "No external power",
-            "1h": "External power present"
+            "0h": "No unconstrained power",
+            "1h": "Unconstrained power present"
           }
         },
         {
-          "bit_field": "18-18",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "17-17",
+          "bit_field": "18-17",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -2429,10 +1956,10 @@
         },
         {
           "bit_field": "16-16",
-          "name": "RESERVED",
+          "name": "Automatic ID Request",
           "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
+          "reset": "1h",
+          "description": "Configure identity discovery for SOP. If this bit is asserted, the PD Controller will automatically issue Discover Identity VDM for all SOP types when appropriate."
         },
         {
           "bit_field": "15-15",
@@ -2446,7 +1973,7 @@
           "name": "Process Swap to DFP",
           "access_type": "R/W",
           "reset": "1h",
-          "description": "Configure response to DR_Swap to DFP. If this bit is asserted,  the PD Controller will automatically accept a DR_Swap request to become a DFP. Otherwise, the PD Controller will reject such a request."
+          "description": "Configure response to DR_Swap to DFP. If this bit is asserted, the PD Controller will automatically accept a DR_Swap request to become a DFP. Otherwise, the PD Controller will reject such a request."
         },
         {
           "bit_field": "13-13",
@@ -2460,31 +1987,10 @@
           "name": "Process Swap to UFP",
           "access_type": "R/W",
           "reset": "1h",
-          "description": "Configure response to DR_Swap to UFP. If this bit is asserted,  the PD Controller will automatically accept a DR_Swap request to become a UFP. Otherwise, the PD Controller will reject such a request."
+          "description": "Configure response to DR_Swap to UFP. If this bit is asserted, the PD Controller will automatically accept a DR_Swap request to become a UFP. Otherwise, the PD Controller will reject such a request."
         },
         {
-          "bit_field": "11-11",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "10-10",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "9-9",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "8-8",
+          "bit_field": "11-8",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -2495,28 +2001,28 @@
           "name": "Initiate Swap to Source",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Configure PR_Swap to source initiation. If this bit is asserted, the PD Controller automatically initiates and sends PR_Swap requests to the Port Partner when appropriate if presently operating as Sink  (C/P)."
+          "description": "Configure PR_Swap to source initiation. If this bit is asserted, the PD Controller automatically initiates and sends PR_Swap requests to the Port Partner when appropriate if presently operating as Sink (Consumer/Provider)."
         },
         {
           "bit_field": "6-6",
           "name": "Process Swap to Source",
           "access_type": "R/W",
           "reset": "1h",
-          "description": "Configure response to PR_Swap to source. If this bit is asserted,  the PD Controller will automatically accept a PR_Swap request to become a Source. Otherwise, the PD Controller will reject such a request."
+          "description": "Configure response to PR_Swap to source. If this bit is asserted, the PD Controller will automatically accept a PR_Swap request to become a Source. Otherwise, the PD Controller will reject such a request."
         },
         {
           "bit_field": "5-5",
           "name": "Initiate Swap to Sink",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Configure PR_Swap to sink initiation. If this bit is asserted, the PD Controller automatically initiates and sends PR_Swap requests to the Port Partner when appropriate if presently operating as Source  (P/C)."
+          "description": "Configure PR_Swap to sink initiation. If this bit is asserted, the PD Controller automatically initiates and sends PR_Swap requests to the Port Partner when appropriate if presently operating as Source (Provider/Consumer)."
         },
         {
           "bit_field": "4-4",
           "name": "Process Swap to Sink",
           "access_type": "R/W",
           "reset": "1h",
-          "description": "Configure response to PR_Swap to sink. If this bit is asserted,  the PD Controller will automatically accept a PR_Swap request to become a Sink. Otherwise, the PD Controller will reject such a request."
+          "description": "Configure response to PR_Swap to sink. If this bit is asserted, the PD Controller will automatically accept a PR_Swap request to become a Sink. Otherwise, the PD Controller will reject such a request."
         },
         {
           "bit_field": "3-2",
@@ -2530,7 +2036,7 @@
           "name": "TypeC Current",
           "access_type": "R/W",
           "reset": "2h",
-          "description": "Type-C Current advertisement. This setting is ignored if a Source role is not enabled and active. This setting is also ignored during an explicit USB PD contract, where the Rp value is used for collision avoidance as required by the USB PD specification. Note that when PP5V is low, the FW will only use the default Type-C current regardless of the value in this field. 0h = USB Default Current 1h = 1.5 A 2h = 3.0 A 3h = Reserved",
+          "description": "Type-C Current advertisement. This setting is ignored if a Source role is not enabled and active. This setting is also ignored during an explicit USB PD contract, where the Rp value is used for collision avoidance as required by the USB PD specification. Note that when PP5V is low, the FW will only use the default Type-C current regardless of the value in this field.",
           "values": {
             "0h": "USB Default Current",
             "1h": "1.5 A",
@@ -2545,7 +2051,8 @@
       "name": "Boot Flags",
       "width": 40,
       "reset": "0000000000h",
-      "description": "Detailed status of boot process. This register provides details on PD Controller boot flags, Customer OTP configuration, and silicon revision Table 3-14. Boot Flags Register Field Descriptions",
+      "description": "Detailed status of boot process. This register provides details on PD Controller boot flags, Customer OTP configuration, and silicon revision",
+      "source_page": 33,
       "fields": [
         {
           "bit_field": "39-32",
@@ -2559,38 +2066,16 @@
           "name": "Patch Config Source",
           "access_type": "R",
           "reset": "0h",
-          "description": "Source of patch configuration. This field indicates the source of the configuration patch that has been successfully loaded. 0h = No configuration has been loaded 4h = Reserved 5h = A configuration has been loaded from EEPROM 6h = A configuration has been loaded from I2C 7h = Reserved",
+          "description": "Source of patch configuration. This field indicates the source of the configuration patch that has been successfully loaded.",
           "values": {
             "0h": "No configuration has been loaded",
-            "4h": "Reserved",
             "5h": "A configuration has been loaded from EEPROM",
             "6h": "A configuration has been loaded from I2C",
             "7h": "Reserved"
           }
         },
         {
-          "bit_field": "28-27",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "26-25",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "RESERVED"
-        },
-        {
-          "bit_field": "24-24",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "23-20",
+          "bit_field": "28-20",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -2604,21 +2089,7 @@
           "description": "System thermal shut-down indicator. This bit is asserted if the PD controller is rebooting after the system thermal sensor caused a reset."
         },
         {
-          "bit_field": "18-18",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "17-17",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "16-14",
+          "bit_field": "18-14",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -2729,7 +2200,8 @@
       "name": "Received Source Capabilities",
       "width": 424,
       "reset": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000h",
-      "description": "Received Source Capabilities. This register stores latest Source Capabilities message received over BMC. Table 3-15. Received Source Capabilities Register Field Descriptions",
+      "description": "Received Source Capabilties. This register stores latest Source Capabilities message received over BMC.",
+      "source_page": 34,
       "fields": [
         {
           "bit_field": "423-232",
@@ -2799,7 +2271,7 @@
           "name": "Number Valid PDOs",
           "access_type": "R",
           "reset": "0h",
-          "description": "Number of valid PDOs in this register. Each PDO is 4 bytes. (max of 7)"
+          "description": "Number of valid SPR PDOs in this register. Each PDO is 4 bytes. (max of 7)"
         }
       ]
     },
@@ -2808,7 +2280,8 @@
       "name": "Received Sink Capabilities",
       "width": 424,
       "reset": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000h",
-      "description": "Received Sink Capabilities. This register stores latest Sink Capabilities message received over BMC. Table 3-16. Received Sink Capabilities Register Field Descriptions",
+      "description": "Received Sink Capabilities. This register stores latest Sink Capabilities message received over BMC.",
+      "source_page": 35,
       "fields": [
         {
           "bit_field": "423-232",
@@ -2878,7 +2351,7 @@
           "name": "Number Valid PDOs",
           "access_type": "R",
           "reset": "0h",
-          "description": "Number of valid PDOs in this register. Each PDO is 4 bytes. (max of 7)"
+          "description": "Number of valid SPR PDOs in this register. Each PDO is 4 bytes. (max of 7)"
         }
       ]
     },
@@ -2886,109 +2359,12 @@
       "offset": "32h",
       "name": "Transmit Source Capabilities",
       "width": 504,
-      "reset": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000058260C844C2AA801h",
-      "description": "Source Capabilities for sending. This register stores PDOs and settings for outgoing Source Capabilities PD messages. Initialized by Application Customization. Table 3-17. Transmit Source Capabilities Register Field Descriptions",
+      "reset": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002C2601912C000001h",
+      "description": "Source Capabilities for sending. This register stores PDOs and settings for outgoing Source Capabilities PD messages. Initialized by Application Customization.",
+      "source_page": 36,
       "fields": [
         {
-          "bit_field": "503-485",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "484-484",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "483-483",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "482-482",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "481-481",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "480-480",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "479-479",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "478-478",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "477-477",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "476-476",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "475-475",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "474-474",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "473-473",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "472-472",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "471-248",
+          "bit_field": "503-248",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -2999,113 +2375,66 @@
           "name": "TX Source PDO 7",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Seventh Source Capabilities PDO contents."
+          "description": "SPR Seventh Source Capabilities PDO contents."
         },
         {
           "bit_field": "215-184",
           "name": "TX Source PDO 6",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Sixth Source Capabilities PDO contents."
+          "description": "SPR Sixth Source Capabilities PDO contents."
         },
         {
           "bit_field": "183-152",
           "name": "TX Source PDO 5",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Fifth Source Capabilities PDO contents."
+          "description": "SPR Fifth Source Capabilities PDO contents."
         },
         {
           "bit_field": "151-120",
           "name": "TX Source PDO 4",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Fourth Source Capabilities PDO contents."
+          "description": "SPR Fourth Source Capabilities PDO contents."
         },
         {
           "bit_field": "119-88",
           "name": "TX Source PDO 3",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Third Source Capabilities PDO contents."
+          "description": "SPR Third Source Capabilities PDO contents."
         },
         {
           "bit_field": "87-56",
           "name": "TX Source PDO 2",
           "access_type": "R/W",
-          "reset": "58h",
-          "description": "Second Source Capabilities PDO contents."
+          "reset": "2Ch",
+          "description": "SPR Second Source Capabilities PDO contents."
         },
         {
           "bit_field": "55-24",
           "name": "TX Source PDO 1",
           "access_type": "R/W",
-          "reset": "260C844Ch",
-          "description": "First Source Capabilities PDO contents."
+          "reset": "2601912Ch",
+          "description": "SPR First Source Capabilities PDO contents."
         },
         {
-          "bit_field": "23-22",
+          "bit_field": "23-10",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Reserved"
         },
         {
-          "bit_field": "21-20",
-          "name": "Power Path for PDO 7",
-          "access_type": "R/W",
-          "reset": "2h",
-          "description": "Configures which PP to use for PDO7. Same format as PowerPathForPDO2."
-        },
-        {
-          "bit_field": "19-18",
-          "name": "Power Path for PDO 6",
-          "access_type": "R/W",
-          "reset": "2h",
-          "description": "Configures which PP to use for PDO6. Same format as PowerPathForPDO2."
-        },
-        {
-          "bit_field": "17-16",
-          "name": "Power Path for PDO 5",
-          "access_type": "R/W",
-          "reset": "2h",
-          "description": "Configures which PP to use for PDO5. Same format as PowerPathForPDO2."
-        },
-        {
-          "bit_field": "15-14",
-          "name": "Power Path for PDO 4",
-          "access_type": "R/W",
-          "reset": "2h",
-          "description": "Configures which PP to use for PDO4. Same format as PowerPathForPDO2."
-        },
-        {
-          "bit_field": "13-12",
-          "name": "Power Path for PDO 3",
-          "access_type": "R/W",
-          "reset": "2h",
-          "description": "Configures which PP to use for PDO3. Same format as PowerPathForPDO2."
-        },
-        {
-          "bit_field": "11-10",
-          "name": "Power Path for PDO 2",
-          "access_type": "R/W",
-          "reset": "2h",
-          "description": "Configures which PP to use for PDO2. 0h = Reserved 1h = Reserved 2h = PP_EXT1 is used for this PDO",
-          "values": {
-            "0h": "Reserved",
-            "1h": "Reserved",
-            "2h": "PP_EXT1 is used for this PDO"
-          }
-        },
-        {
           "bit_field": "9-8",
           "name": "Power Path for PDO 1",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Configures which PP to use for PDO1. 0h = PP_5V1 is used for this PDO 2h = PP_EXT1 is used for this PDO",
+          "description": "Configures which PP to use for PDO1.",
           "values": {
-            "0h": "PP_5V1 is used for this PDO",
-            "2h": "PP_EXT1 is used for this PDO"
+            "0h": "PP5V is used for this PDO",
+            "2h": "PP_EXT is used for this PDO"
           }
         },
         {
@@ -3128,8 +2457,9 @@
       "offset": "33h",
       "name": "Transmit Sink Capabilities",
       "width": 424,
-      "reset": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000091258360C839D04h",
-      "description": "Sink Capabilities for sending. This register stores PDOs for outgoing Sink Capabilities USB PD messages. Initialized by Application Customization. The PD controller transmits the contents of this register as a Sink_Capabilities message after receiving a Get_Sink_Cap message unless its configuration or USB PD rules require a different response in the context. Writes to this register have no immediate effect. The PD controller updates and uses this register each time it needs to send a Sink Capabilities message. Each PDO in this TX_SINK_CAPS register follows the definition from the USB PD specification. For more details on the meaning of each field refer to the USB PD specification. Table 3-18. Transmit Sink Capabilities Register Field Descriptions",
+      "reset": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002D12C3601912C04h",
+      "description": "Sink Capabilities for sending. This register stores PDOs for outgoing Sink Capabilities USB PD messages. The PD controller transmits the contents of this register as a Sink_Capabilities message after receiving a Get_Sink_Cap message unless its configuration or USB PD rules require a different response in the context. Each PDO in this TX_SINK_CAPS register follows the definition from the USB PD specification. For more details on the meaning of each field refer to the USB PD specification.",
+      "source_page": 37,
       "fields": [
         {
           "bit_field": "423-232",
@@ -3143,49 +2473,49 @@
           "name": "TX Sink PDO 7",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Seventh Sink Capabilities PDO contents."
+          "description": "SPR Seventh Sink Capabilities PDO contents."
         },
         {
           "bit_field": "199-168",
           "name": "TX Sink PDO 6",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Sixth Sink Capabilities PDO contents."
+          "description": "SPR Sixth Sink Capabilities PDO contents."
         },
         {
           "bit_field": "167-136",
           "name": "TX Sink PDO 5",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Fifth Sink Capabilities PDO contents."
+          "description": "SPR Fifth Sink Capabilities PDO contents."
         },
         {
           "bit_field": "135-104",
           "name": "TX Sink PDO 4",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Fourth Sink Capabilities PDO contents."
+          "description": "SPR Fourth Sink Capabilities PDO contents."
         },
         {
           "bit_field": "103-72",
           "name": "TX Sink PDO 3",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Third Sink Capabilities PDO contents."
+          "description": "SPR Third Sink Capabilities PDO contents."
         },
         {
           "bit_field": "71-40",
           "name": "TX Sink PDO 2",
           "access_type": "R/W",
-          "reset": "00091258h",
-          "description": "Second Sink Capabilities PDO contents."
+          "reset": "0002D12Ch",
+          "description": "SPR Second Sink Capabilities PDO contents."
         },
         {
           "bit_field": "39-8",
           "name": "TX Sink PDO 1",
           "access_type": "R/W",
-          "reset": "360C839Dh",
-          "description": "First Sink Capabilities PDO contents."
+          "reset": "3601912Ch",
+          "description": "SPR First Sink Capabilities PDO contents."
         },
         {
           "bit_field": "7-3",
@@ -3199,7 +2529,7 @@
           "name": "Number Valid PDOs",
           "access_type": "R/W",
           "reset": "4h",
-          "description": "Number Valid PDOs"
+          "description": "Number of valid PDOs in this register. Each PDO is 4 bytes. (max of 7)"
         }
       ]
     },
@@ -3208,7 +2538,8 @@
       "name": "Active PDO Contract",
       "width": 48,
       "reset": "000000000000h",
-      "description": "Power data object for active contract. This register stores PDO data for the current explicit USB PD contract, or all zeroes if no contract. Table 3-19. Active PDO Contract Register Field Descriptions",
+      "description": "Power data object for active contract. This register stores PDO data for the current explicit USB PD contract, or all zeroes if no contract.",
+      "source_page": 38,
       "fields": [
         {
           "bit_field": "47-42",
@@ -3222,14 +2553,14 @@
           "name": "First PDO Control Bits",
           "access_type": "R",
           "reset": "0h",
-          "description": "Contains bits 29:20 of the first PDO. It does not matter which PDO was selected, this field is always drawn from the first PDO."
+          "description": "Contains PDO specific information of the first PDO. It does not matter which PDO was selected, this field is always drawn from the first PDO."
         },
         {
           "bit_field": "31-0",
           "name": "Active PDO",
           "access_type": "R",
           "reset": "0h",
-          "description": "Power data object. This field contains the contents of the PDO Requested by PD Controller as Sink and Accepted by Source, once it is Accepted by Source."
+          "description": "Power data object. This field contains the contents of the PDO requested by PD controller as sink and accepted by source, once it is accepted by source."
         }
       ]
     },
@@ -3238,14 +2569,15 @@
       "name": "Active RDO Contract",
       "width": 128,
       "reset": "00000000000000000000000000000000h",
-      "description": "Power data object for the active contract. This register stores the RDO of the current explicit USB PD contract, or all zeroes if no contract. Table 3-20. Active RDO Contract Register Field Descriptions",
+      "description": "Power data object for the active contract. This register stores the RDO of the current explicit USB PD contract, or all zeroes if no contract.",
+      "source_page": 39,
       "fields": [
         {
           "bit_field": "127-96",
-          "name": "RESERVED",
+          "name": "RequestedRDO",
           "access_type": "R",
           "reset": "0h",
-          "description": "Reserved"
+          "description": "RDO requested by port partner when PD controller is acting as a source. This field is updated when Source PDO has been negotiated (the Accept message has been transmitted and the tSrcTransition timer has expired)"
         },
         {
           "bit_field": "95-32",
@@ -3259,42 +2591,42 @@
           "name": "Object Position",
           "access_type": "R",
           "reset": "0h",
-          "description": "As defined by USB PD."
+          "description": "Corresponding PDO location in the Source_Capabilities Message."
         },
         {
           "bit_field": "27-27",
           "name": "Give Back Flag",
           "access_type": "R",
           "reset": "0h",
-          "description": "As defined by USB PD."
+          "description": "When set, the device will respond to a GotoMin message by reducing its load to minimum operating current"
         },
         {
           "bit_field": "26-26",
-          "name": "Capability Missmatch",
+          "name": "Capabality Missmatch",
           "access_type": "R",
           "reset": "0h",
-          "description": "As defined by USB PD."
+          "description": "Set when Source cannot satisfy the Sink's power or voltage requirements per Souce Capabilities"
         },
         {
           "bit_field": "25-25",
           "name": "USB Communication Capable",
           "access_type": "R",
           "reset": "0h",
-          "description": "As defined by USB PD."
+          "description": "When set, the device has USB data lines and is capable of communicating using USB2, USB3 or USB4 protocols"
         },
         {
           "bit_field": "24-24",
           "name": "No USB Suspend",
           "access_type": "R",
           "reset": "0h",
-          "description": "As defined by USB PD."
+          "description": "This flag is used to indicate what actions are taken in USB Suspend."
         },
         {
           "bit_field": "23-23",
           "name": "Unchunked Supported",
           "access_type": "R",
           "reset": "0h",
-          "description": "As defined by USB PD."
+          "description": "When set, the port supports chunked and unchucked messagse."
         },
         {
           "bit_field": "22-20",
@@ -3308,14 +2640,14 @@
           "name": "Operating Current",
           "access_type": "R",
           "reset": "0h",
-          "description": "As defined by USB PD."
+          "description": "Operating current (10mA per LSB)"
         },
         {
           "bit_field": "9-0",
           "name": "Max Min Operation Current",
           "access_type": "R",
           "reset": "0h",
-          "description": "As defined by USB PD."
+          "description": "Shall be assigned same as Operating Current field"
         }
       ]
     },
@@ -3323,8 +2655,9 @@
       "offset": "37h",
       "name": "Autonegotiate Sink",
       "width": 192,
-      "reset": "00000000000000000000000000000000000191904114503Eh",
-      "description": "Configuration for sink power negotiations. This register defines the voltage range between which the system can function properly, allowing the PD Controller to negotiate its own contracts. Initialized by Application Customization. Table 3-21. Autonegotiate Sink Register Field Descriptions",
+      "reset": "000000000000000000000000000000000021919041145076h",
+      "description": "Configuration for sink power negotiations. This register defines the voltage range between which the system can function properly, allowing the PD Controller to negotiate its own contracts. The register is set by any power up settings and overwritten by customer configurations or MCU.",
+      "source_page": 40,
       "fields": [
         {
           "bit_field": "191-116",
@@ -3335,10 +2668,10 @@
         },
         {
           "bit_field": "115-105",
-          "name": "PPS Output Voltage",
+          "name": "PPS Operating Voltage",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "This is the desired output voltage in 20mV units. This is inserted as- is into the Request USB PD message. Note that some PD controllers are unable to turn on the gate-drivers if VBUS less than 3.8V, check the VBUS UVLO value in the data-sheet."
+          "description": "This is the desired output voltage in 20mV units. This is inserted as- is into the Request USB PD message. Note that some PD controllers are unable to turn on the gate-drivers if VBUS less than vSafe5V, check the VBUS UVLO value in the data-sheet."
         },
         {
           "bit_field": "104-103",
@@ -3373,11 +2706,11 @@
           "name": "PPS Required Full Voltage Range",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Select only a source with full voltage range. If this bit is asserted, a PPS supply type is not selected unless the APDO.MinVoltage ≤ TX_SINK_CAPS.MinPpsVoltage,  APDO.MaxVoltage ≥ TX_SINK_CAPS.MaxPpsVoltage, and APDO.MaxCurrent ≥ TX_SINK_CAPS.MaxPpsCurrent. This bit has no effect unless PPSEnableSinkMode is asserted."
+          "description": "Select only a source with full voltage range. If this bit is asserted, a PPS supply type is not selected unless the APDO.MinVoltage ≤ TX_SINK_CAPS.MinPpsVoltage, APDO.MaxVoltage ≥ TX_SINK_CAPS.MaxPpsVoltage, and APDO.MaxCurrent ≥ TX_SINK_CAPS.MaxPpsCurrent. This bit has no effect unless PPSEnableSinkMode is asserted."
         },
         {
           "bit_field": "67-67",
-          "name": "PPS Source Operating Mode",
+          "name": "PPS Operating Mode",
           "access_type": "R/W",
           "reset": "0h",
           "description": "Selection for CV or CC mode. If this bit is set to 1, then the PD controller assumes the system is in constant voltage mode and sets the VBUS disconnect threshold accordingly. If this bit is set to 0, then the PD controller will assume the system is in current limit mode and it will lower the VBUS disconnect threshold accordingly."
@@ -3387,7 +2720,7 @@
           "name": "PPS Request Interval",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Sink PPS request interval. This field sets the frequency at which the PD controller will send a new request to the source even if the host has not made any change in the request. 0h = 8 seconds 1h = 4 seconds 2h = 2 seconds 3h = 1 second",
+          "description": "Sink PPS request interval. This field sets the frequency at which the PD controller will send a new request to the source even if the host has not made any change in the request.",
           "values": {
             "0h": "8 seconds",
             "1h": "4 seconds",
@@ -3413,7 +2746,7 @@
           "bit_field": "61-52",
           "name": "Auto Neg Capabilities Mismatch Power",
           "access_type": "R/W",
-          "reset": "0h",
+          "reset": "2h",
           "description": "Capabilities Mismatch Power Threshold. If the selected PDO offers less power than what is specified in this register, then the PD controller will assert the Capability Mismatch bit in its Request message unless NoCapabilityMismatch is set to 1. (250mW per LSB)"
         },
         {
@@ -3421,38 +2754,31 @@
           "name": "Auto Neg Min Voltage",
           "access_type": "R/W",
           "reset": "64h",
-          "description": "Minimum voltage to request. During PD power contract negotiation,  the PD controller will only select voltages that are greater than or equal to the value specified in this field. Not used unless AutoComputeSinkMinVoltage=0. (50mV per LSB)"
+          "description": "Minimum voltage to request. During PD power contract negotiation, the PD controller will only select voltages that are greater than or equal to the value specified in this field. Not used unless AutoComputeSinkMinVoltage=0. (50mV per LSB)"
         },
         {
           "bit_field": "41-32",
           "name": "Auto Neg Max Voltage",
           "access_type": "R/W",
           "reset": "190h",
-          "description": "Maximum voltage to request. During PD power contract negotiation,  the PD controller will only select voltages that are less than or equal to the value specified in this field. Not used unless AutoComputeSinkMinVoltage=0. (50mV per LSB)"
+          "description": "Maximum voltage to request. During PD power contract negotiation, the PD controller will only select voltages that are less than or equal to the value specified in this field. Not used unless AutoComputeSinkMinVoltage=0. (50mV per LSB) See description in AutoComputeSinkMinPower."
         },
         {
           "bit_field": "31-22",
           "name": "Auto Neg Sink Min Required Power",
           "access_type": "R/W",
           "reset": "104h",
-          "description": "Minimum operating power required by the Sink. The PD Controller will always attempt to receive this power level from the Source. (250mW per LSB) See description in AutoComputeSinkMinPower field"
+          "description": "Minimum operating power required by the Sink. The PD Controller will always attempt to receive this power level from the Source. (250mW per LSB)"
         },
         {
           "bit_field": "21-12",
-          "name": "RESERVED",
+          "name": "Auto Neg Max Current",
           "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
+          "reset": "145h",
+          "description": "Maximum current to request. The PD controller will not request more current than indicated by this field. The host should ensure that the max current for all PDO's in the TX_SINK_CAPS register do not exceed this value. (10mA per LSB)."
         },
         {
-          "bit_field": "11-8",
-          "name": "RESERVED",
-          "access_type": "R/W",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "7-7",
+          "bit_field": "11-7",
           "name": "RESERVED",
           "access_type": "R/W",
           "reset": "0h",
@@ -3462,15 +2788,15 @@
           "bit_field": "6-6",
           "name": "Auto Disable Sink Upon Capability Mismatch",
           "access_type": "R/W",
-          "reset": "0h",
-          "description": "Sink path and capability mismatch settings. If this bit is asserted,  then any time the implicit or explicit power contract would cause the Capability Mismatch bit to be set the PD controller will disable the sinking path. The 'SRDY' 4CC task can override and enable the sink path. However, if the contract changes after the 'SRDY' has completed, the PD controller will disable the sink path if the contract causes a capability mismatch. This bit should only be asserted if the NoCapabilityMismatch bit is set to 0."
+          "reset": "1h",
+          "description": "Sink path and capability mismatch settings. If this bit is asserted, then any time the implicit or explicit power contract would cause the Capability Mismatch bit to be set the PD controller will disable the sinking path. This bit should only be asserted if the NoCapabilityMismatch bit is set to 0."
         },
         {
           "bit_field": "5-5",
           "name": "Auto Compute Sink Max Voltage",
           "access_type": "R/W",
           "reset": "1h",
-          "description": "Configuration for maximum voltage. The PD controller can automatically compute ANMaxVoltage, or allow the host to specify it. 0h = Provided by host 1h = Computed by PD controller",
+          "description": "Configuration for maximum voltage. The PD controller can automatically compute ANMaxVoltage, or allow the host to specify it.",
           "values": {
             "0h": "Provided by host",
             "1h": "Computed by PD controller"
@@ -3481,7 +2807,7 @@
           "name": "Auto Compute Sink Min Voltage",
           "access_type": "R/W",
           "reset": "1h",
-          "description": "Configuration for minimum voltage. The PD controller can automatically compute ANMinVoltage, or allow the host to specify it. 0h = Provided by host 1h = Computed by PD controller",
+          "description": "Configuration for minimum voltage. The PD controller can automatically compute ANMinVoltage, or allow the host to specify it.",
           "values": {
             "0h": "Provided by host",
             "1h": "Computed by PD controller"
@@ -3489,13 +2815,13 @@
         },
         {
           "bit_field": "3-3",
-          "name": "No Capability Mismatch",
+          "name": "No Capabality Mismatch",
           "access_type": "R/W",
-          "reset": "1h",
-          "description": "Configuration for capability mismatch in RDO. There are two conditions that will trigger a capability mismatch: • If the attached source does not offer a PDO whose power is greater or equal to the ANSinkCapMismatchPower field in this register. • PPS is enabled in this register and the attached source did not offer a PPS PDO that matches the requirements in TX_SINK_CAPS. If either condition is true, then the PD controller will assert the capability mismatch bit in its request unless this bit is asserted. 0h = Capability mismatch enabled 1h = Capability mismatch disabled.",
+          "reset": "0h",
+          "description": "Configuration for capability mismatch in RDO. There are two conditions that will trigger a capability mismatch: • If the attached source does not offer a PDO whose power is greater or equal to the ANSinkCapMismatchPower field in this register. • PPS is enabled in this register and the attached source did not offer a PPS PDO that matches the requirements in TX_SINK_CAPS. If either condition is true, then the PD controller will assert the capability mismatch bit in its request unless this bit is asserted.",
           "values": {
-            "0h": "Capability mismatch enabled",
-            "1h": "Capability mismatch disabled."
+            "0h": "Capabiltiy mismatch enabled",
+            "1h": "Capability mismatch disabled"
           }
         },
         {
@@ -3503,7 +2829,7 @@
           "name": "Auto Compute Sink Min Power",
           "access_type": "R/W",
           "reset": "1h",
-          "description": "Minimum power sink requires. The minimum sink power is the largest power reported in any valid PDO in the TX_SINK_CAPS (0x33). The power for a particular PDO from the TX_SINK_CAPS follows for each supply type: • Battery Supply: OperatingPower • Variable Supply: MaxVoltage*OperatingCurrent • Fixed Supply: Voltage*OperatingCurrent. However, if the TX_SINK_CAPS register includes Battery supply type PDO(s), then ANSinkMinRequiredPower = maximum OperatingPower in a Battery supply type PDO. 0h = Provided by host 1h = Computed by PD controller",
+          "description": "Minimum power sink requires. The minimum sink power is the largest power reported in any valid PDO in the TX_SINK_CAPS (0x33). The power for a particular PDO from the TX_SINK_CAPS follows for each supply type: • Battery Supply: OperatingPower • Variable Supply: MaxVoltage*OperatingCurrent • Fixed Supply: Voltage*OperatingCurrent. However, if the TX_SINK_CAPS register includes Battery supply type PDO(s), then ANSinkMinRequiredPower = maximum OperatingPower in a Battery supply type PDO.",
           "values": {
             "0h": "Provided by host",
             "1h": "Computed by PD controller"
@@ -3521,7 +2847,7 @@
           "name": "Auto Neg RDO Priority",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Configuration for tie-breaker in PDO selection. The PD controller will find the set of PDOs that fulfill the voltage requirements. From that set of PDOs it will pick the one with higher power. If two acceptable PDOs have the same power, Fixed Supply Type is preferred, and then Variable Supply has second preference. If two PDOs have the same power and the same type, then this bit determines which PDO is selected. 0h = Higher voltage 1h = Lower voltage",
+          "description": "Configuration for tie-breaker in PDO selection. The PD controller will find the set of PDOs that fulfill the voltage requirements. From that set of PDOs it will pick the one with higher power. If two acceptable PDOs have the same power, Fixed Supply Type is preferred, and then Variable Supply has second preference. If two PDOs have the same power and the same type, then this bit determines which PDO is selected.",
           "values": {
             "0h": "Higher voltage",
             "1h": "Lower voltage"
@@ -3534,7 +2860,8 @@
       "name": "Power Status",
       "width": 16,
       "reset": "0000h",
-      "description": "Details about the power of the connection. This register reports status regarding the power of the connection. Table 3-22. Power Status Register Field Descriptions",
+      "description": "Details about the power of the connection. This register reports status regarding the power of the connection.",
+      "source_page": 43,
       "fields": [
         {
           "bit_field": "15-10",
@@ -3548,7 +2875,7 @@
           "name": "Charger Advertise Status",
           "access_type": "R",
           "reset": "0h",
-          "description": "Charger Advertise Status 0h = Charger advertise disabled or not run 1h = Charger advertisement in process 2h = Charger advertisement complete 3h = Reserved",
+          "description": "Charger Advertise Status",
           "values": {
             "0h": "Charger advertise disabled or not run",
             "1h": "Charger advertisement in process",
@@ -3561,7 +2888,6 @@
           "name": "Charger Detect Status",
           "access_type": "R",
           "reset": "0h",
-          "description": "0h = Charger detection disabled or not run 1h = Charger detection in progress 2h = Charger detection complete none detected 3h = Charger detection complete SDP detected 4h = Charger detection complete BC 1.2 CDP detected 5h = Charger detection complete BC 1.2 DCP detected 6h = Charger detection complete Divider1 DCP detected 7h = Charger detection complete Divider2 DCP detected 8h = Charger detection complete Divider3 DCP detected 9h = Charger detection complete 1.2V DCP detected",
           "values": {
             "0h": "Charger detection disabled or not run",
             "1h": "Charger detection in progress",
@@ -3580,7 +2906,7 @@
           "name": "TypeC Current",
           "access_type": "R",
           "reset": "0h",
-          "description": "This field is redundant with PD_STATUS.CCPullUp in register 0x40 when SourceSink is 1b. This field is redundant with PORT_CONTROL.TypeCCurrent in register 0x29 when SourceSink is 0b. In the future, this redundant field may be removed. This field is intended for Type-C Sink operation. If the port is connected as source, the field is updated upon initial connection only. 0h = USB Default Current 1h = 1.5 A 2h = 3.0 A 3h = Explicit PD contract sets current",
+          "description": "This field is redundant with PD_STATUS.CCPullUp in register 0x40 when SourceSink is 1b. This field is redundant with PORT_CONTROL.TypeCCurrent in register 0x29 when SourceSink is 0b. This field is intended for Type-C Sink operation. If the port is connected as source, the field is updated upon initial connection only.",
           "values": {
             "0h": "USB Default Current",
             "1h": "1.5 A",
@@ -3593,7 +2919,7 @@
           "name": "SourceSink",
           "access_type": "R",
           "reset": "0h",
-          "description": "Source / Sink indicator. This bit is equivalent to PresentPDRole in register 0x40. It is replicated in this register for convenience. In the future, this redundant bit may be removed. 0h = Connection requests power 1h = Connection provides power (PD Controller as sink)",
+          "description": "Source / Sink indicator. This bit is equivalent to PresentPDRole in register 0x40. It is replicated in this register for convenience.",
           "values": {
             "0h": "Connection requests power",
             "1h": "Connection provides power (PD Controller as sink)"
@@ -3604,7 +2930,7 @@
           "name": "Power Connection",
           "access_type": "R",
           "reset": "0h",
-          "description": "Asserted if there is a connection. This bit is asserted when PlugPresent is TRUE and ConnState is greater than 5h. So it is redundant with information from register 0x1A. It is replicated in this register for convenience. In the future this redundant bit may be removed. 0h = No connection 1h = Connection present",
+          "description": "Asserted if there is a connection. This bit is asserted when STATUS.PlugPresent is TRUE AND STATUS.ConnState is greater than 5h.",
           "values": {
             "0h": "No connection",
             "1h": "Connection present"
@@ -3617,24 +2943,11 @@
       "name": "PD Status",
       "width": 32,
       "reset": "00000000h",
-      "description": "Status of PD and Type-C state-machine. This register contains details regarding the status of PD messages and the Type-C state machine. Table 3-23. PD Status Register Field Descriptions",
+      "description": "Status of PD and Type-C state-machine. This register contains details regarding the status of PD messages and the Type-C state machine.",
+      "source_page": 44,
       "fields": [
         {
-          "bit_field": "31-31",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "30-28",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "27-22",
+          "bit_field": "31-22",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -3645,27 +2958,27 @@
           "name": "Hard Reset Details",
           "access_type": "R",
           "reset": "0h",
-          "description": "Reason for Hard Reset 0h = Reset value no hard reset 1h = Received from Port Partner 2h = Requested by host 3h = Invalid DR_Swap request during Active Mode 4h = DischargeFailed. 5h = NoResponseTimeOut. 6h = SendSoftReset. 7h = Sink_SelectCapability. 8h = Sink_TransitionSink. 9h = Sink_WaitForCapabilities. Ah = SoftReset. Bh = SourceOnTimeout. Ch = Source_CapabilityResponse. Dh = Source_SendCapabilities. Eh = SourcingFault. Fh = UnableToSource. 10h = FRS failure 11h = Unexpected message 12h = Failure to to complete the VCONN recovery sequence within 200ms after PP5V rising edge",
+          "description": "Reason for Hard Reset",
           "values": {
             "0h": "Reset value no hard reset",
             "1h": "Received from Port Partner",
             "2h": "Requested by host",
-            "3h": "Invalid DR_Swap request during Active Mode",
-            "4h": "DischargeFailed.",
-            "5h": "NoResponseTimeOut.",
-            "6h": "SendSoftReset.",
-            "7h": "Sink_SelectCapability.",
-            "8h": "Sink_TransitionSink.",
-            "9h": "Sink_WaitForCapabilities.",
-            "Ah": "SoftReset.",
-            "Bh": "SourceOnTimeout.",
-            "Ch": "Source_CapabilityResponse.",
-            "Dh": "Source_SendCapabilities.",
-            "Eh": "SourcingFault.",
-            "Fh": "UnableToSource.",
-            "10h": "FRS failure",
-            "11h": "Unexpected message",
-            "12h": "Failure to to complete the VCONN recovery sequence within"
+            "3h": "DR_Swap Message is a received when there is an active mode between the port-partners",
+            "4h": "The source output voltage failed to settle at vSrcNew within tSrcSettle during high-low voltage transition. Applicable only when the port role is SRC",
+            "5h": "The port-partner did not respond to HardReset within tNoResponse time",
+            "6h": "The port-partner did not respond to SoftReset message with Accept within tSenderResponse time",
+            "7h": "The port-partner did not respond to Request message with Accept within tSenderResponse time",
+            "8h": "The port-partner did not respond to Accept message with PS_RDY within tPSTransition time",
+            "9h": "The port-partner did not send Source_Capabilities message for a duration of tTypeCSinkWaitCap after presenting VBUS",
+            "Ah": "The port-partner did not respond to SoftReset messsage after nRetryCount attempts",
+            "Bh": "Reserved",
+            "Ch": "The contract is invalid after sending Wait/Reject to Request messsage",
+            "Dh": "The port-partner did not respond to Source_Capabilities message with Request within tSenderResponse time",
+            "Eh": "The new VCONN provider did not send PS_RDY within tVCONNSourceTimeout + tvconnsourceon time",
+            "Fh": "The source output voltage failed to settle at vSrcNew within tSrcSettle during low-high voltage transition. Applicable only when the port role is SRC",
+            "10h": "Reserved",
+            "11h": "An unexpected message is received during power transitions",
+            "12h": "Failure to to complete the VCONN recovery sequence within 200ms after PP5V rising edge"
           }
         },
         {
@@ -3680,7 +2993,7 @@
           "name": "Soft Reset Details",
           "access_type": "R",
           "reset": "0h",
-          "description": "Reason for Soft Reset 0h = Reset value no soft reset 1h = Soft reset received from Port Partner 2h = Reserved 3h = Reserved 4h = Received source capabilities message was invalid 5h = Message retries were exhausted 6h = Received an accept message unexpectedly 7h = Received a control message unexpectedly 8h = Received a GetSinkCap message unexpectedly 9h = Received a GetSourceCap message unexpectedly Ah = Received a GotoMin message unexpectedly Bh = Received a PS_RDY message unexpectedly Ch = Received a Ping message unexpectedly Dh = Received a Reject message unexpectedly Eh = Received a Request message unexpectedly Fh = Received a Sink Capabilities message unexpectedly 10h = Received Source Capabilities message unexpected 11h = Received a Swap message unexpectedly 12h = Received a Wait Capabilities message unexpectedly 13h = Received an unknown control message 14h = Received an unknown data message 15h = To initialize SOP' controller in plug 16h = To initialize SOP'' controller in plug 17h = Received an Extended message unexpectedly 18h = Received an unknown Extended message 19h = Received a data message unexpectedly 1Ah = Received a Not Supported message unexpectedly 1Bh = Received a Get_Status message unexpectedly",
+          "description": "Reason for Soft Reset",
           "values": {
             "0h": "Reset value no soft reset",
             "1h": "Soft reset received from Port Partner",
@@ -3698,13 +3011,13 @@
             "Dh": "Received a Reject message unexpectedly",
             "Eh": "Received a Request message unexpectedly",
             "Fh": "Received a Sink Capabilities message unexpectedly",
-            "10h": "Received Source Capabilities message unexpected",
+            "10h": "Received Source Capabilities message unexpectedly",
             "11h": "Received a Swap message unexpectedly",
             "12h": "Received a Wait Capabilities message unexpectedly",
             "13h": "Received an unknown control message",
             "14h": "Received an unknown data message",
-            "15h": "To initialize SOP' controller in plug",
-            "16h": "To initialize SOP'' controller in plug",
+            "15h": "Sent to SOP' controller in cable plug",
+            "16h": "Sent to SOP'' controller in cable plug",
             "17h": "Received an Extended message unexpectedly",
             "18h": "Received an unknown Extended message",
             "19h": "Received a data message unexpectedly",
@@ -3724,7 +3037,7 @@
           "name": "Present PD Role",
           "access_type": "R",
           "reset": "0h",
-          "description": "Present PD power role. The PD Controller is acting under this PD power role. 0h = Sink 1h = Source",
+          "description": "Present PD power role. The PD Controller is acting under this PD power role.",
           "values": {
             "0h": "Sink",
             "1h": "Source"
@@ -3735,7 +3048,7 @@
           "name": "Port Type",
           "access_type": "R",
           "reset": "0h",
-          "description": "Present Type-C power role. The PD Controller is acting under this Type-C power role. 0h = Sink/Source 1h = Sink 2h = Source 3h = Source/Sink",
+          "description": "Present Type-C power role. The PD Controller is acting under this Type-C power role.",
           "values": {
             "0h": "Sink/Source",
             "1h": "Sink",
@@ -3748,7 +3061,7 @@
           "name": "CC Pullup",
           "access_type": "R",
           "reset": "0h",
-          "description": "CC Pull-up value. The pull-up value detected by PD Controller when in CC Pull-down mode. 0h = Not in CC pull-down mode / no CC pull-up detected 1h = USB Default current 2h = 1.5 A (SinkTxNG)  3h = 3.0 A (SinkTxOK)",
+          "description": "CC Pull-up value. The pull-up value detected by PD Controller when in CC Pull-down mode.",
           "values": {
             "0h": "Not in CC pull-down mode / no CC pull-up detected",
             "1h": "USB Default current",
@@ -3766,11 +3079,199 @@
       ]
     },
     {
+      "offset": "42h",
+      "name": "PD3 Configuration",
+      "width": 32,
+      "reset": "00080010h",
+      "description": "PD3.0 configuration settings.",
+      "source_page": 46,
+      "fields": [
+        {
+          "bit_field": "31-21",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "20-20",
+          "name": "Support PPS Status",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Supports PPS Status Message. If this bit is asserted the PD controller will respond to a Get_PPS_Status message with the contents of the TX_PPS_SDB register (0x7A)."
+        },
+        {
+          "bit_field": "19-19",
+          "name": "Support Get Revision",
+          "access_type": "R/W",
+          "reset": "1h",
+          "description": "Supports Revision Message. If this bit is asserted the PD controller will respond to a Get_Revision USB PD message with the supported PD Spec Version."
+        },
+        {
+          "bit_field": "18-18",
+          "name": "Support Get Source Info",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Support Source Info Message. If this bit is asserted the PD controller will respond to a Get_Source_Info USB PD message with the contents of TX_SOURCE_INFO (0x78) register."
+        },
+        {
+          "bit_field": "17-17",
+          "name": "Support Sink Cap Extended",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Support Sink Capabilities Extended message. If this bit is asserted the PD controller will respond to a Get_Sink_Capabilities_Extended message USB PD message with the contents of the TX_SKEDB register (0x7E)."
+        },
+        {
+          "bit_field": "16-12",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "11-11",
+          "name": "Support Battery Status Message",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Support Battery Status message. If this bit is asserted the PD controller will respond to a Get_Battery_Status USB PD message with the contents of the TX_BSDO register (0x7B)."
+        },
+        {
+          "bit_field": "10-10",
+          "name": "Support Battery Capabilities Message",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Support Battery Capability message. If this bit is asserted the PD controller will respond to a Get_Battery_Capabilities USB PD message with the contents of the TX_BCDB register (0x7D)."
+        },
+        {
+          "bit_field": "9-9",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "8-8",
+          "name": "Support Source Extended Message",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Enable Source Capabilities Extended. If this bit is asserted the PD controller will respond to a Get_Source_Capabilities_Extended USB PD message with the contents of the TX_SCEDB register (0x77)."
+        },
+        {
+          "bit_field": "7-7",
+          "name": "Auto Get MIDB",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Enable Auto send GetManufaturerInfo. If this bit is asserted, the PD controller will automatically send a Get_Manufacturer_Info USB PD msesage after receiving a Discovery_Identity USB PD message. The contents of the message will be stored in TX_MIBDB_SOP register (0x73)"
+        },
+        {
+          "bit_field": "6-5",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "4-4",
+          "name": "Unchunked Supported",
+          "access_type": "R/W",
+          "reset": "1h",
+          "description": "Enable unchunked support. If this bit is asserted the PD controller will support unchunked messaging (up to 260 bytes). The host is responsible to consume the unchunked message before the PD controller will be able to receive another long unchunked message."
+        },
+        {
+          "bit_field": "3-0",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        }
+      ]
+    },
+    {
+      "offset": "48h",
+      "name": "Received SOP Identity Data Object",
+      "width": 200,
+      "reset": "00000000000000000000000000000000000000000000000000h",
+      "description": "Received Discover Identity ACK (SOP). Latest Discover Identity response received over USB PD using SOP.",
+      "source_page": 47,
+      "fields": [
+        {
+          "bit_field": "199-168",
+          "name": "RX ID SOP VDO 6",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "6th VDO. The sixth Data Object for Discover Identity response is context-specific."
+        },
+        {
+          "bit_field": "167-136",
+          "name": "RX ID SOP VDO 5",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "5th VDO. The fifth Data Object for Discover Identity response is context-specific."
+        },
+        {
+          "bit_field": "135-104",
+          "name": "RX ID SOP VDO 4",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "4th VDO. The fourth Data Object for Discover Identity response is context-specific as defined in USB PD."
+        },
+        {
+          "bit_field": "103-72",
+          "name": "RX ID SOP VDO 3",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "Product VDO. The third Data Object for Discover Identity response."
+        },
+        {
+          "bit_field": "71-40",
+          "name": "RX ID SOP VDO 2",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "Cert Stat VDO. The second Data Object for Discover Identity response."
+        },
+        {
+          "bit_field": "39-8",
+          "name": "RX ID SOP VDO 1",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "ID Header VDO. The first Data Object in Discover Identity response."
+        },
+        {
+          "bit_field": "7-6",
+          "name": "Response Type",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "Type of response received.",
+          "values": {
+            "0h": "SOP Discover Identity REQ not sent or pending",
+            "1h": "Responder ACK received",
+            "2h": "Responder NAK received or response timeout",
+            "3h": "Responder BUSY received"
+          }
+        },
+        {
+          "bit_field": "5-3",
+          "name": "RESERVED",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "2-0",
+          "name": "Number Valid VDOs",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "Number of valid VDO's in this register. (Max of 6)"
+        }
+      ]
+    },
+    {
       "offset": "5Ch",
       "name": "IO Config",
       "width": 392,
-      "reset": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000014CFh",
-      "description": "Application-specific GPIO Configurations. This register cannot be modified at run-time, the GPIO configurations are set according to the configuration during the boot process. Table 3-24. IO Config Register Field Descriptions",
+      "reset": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000CCFh",
+      "description": "Application-specific GPIO Configurations. This register cannot be modified at run-time, the GPIO configurations are set according to the configuration during the boot process.",
+      "source_page": 48,
       "fields": [
         {
           "bit_field": "391-384",
@@ -3903,7 +3404,7 @@
           "name": "GPIO AI Enable GPIO 2",
           "access_type": "R",
           "reset": "0h",
-          "description": "Assert when GPIO4 is used as an analog input."
+          "description": "Assert when GPIO2 is used as an analog input."
         },
         {
           "bit_field": "225-225",
@@ -3917,7 +3418,7 @@
           "name": "GPIO AI Enable GPIO 0",
           "access_type": "R",
           "reset": "0h",
-          "description": "Assert when GPIO4 is used as an analog input."
+          "description": "Assert when GPIO0 is used as an analog input."
         },
         {
           "bit_field": "223-205",
@@ -3931,7 +3432,7 @@
           "name": "Internal Pull Up Enable",
           "access_type": "R",
           "reset": "0h",
-          "description": "Controls weak pull-up setting for each configurable GPIO  (1=Enabled, 0=Disabled)."
+          "description": "Controls weak pull-up setting for each configurable GPIO (1=Enabled, 0=Disabled)."
         },
         {
           "bit_field": "191-173",
@@ -3945,24 +3446,10 @@
           "name": "Internal Pull Down Enable",
           "access_type": "R",
           "reset": "0h",
-          "description": "Controls weak pull-down setting for each configurable GPIO  (1=Enabled, 0=Disabled)."
+          "description": "Controls weak pull-down setting for each configurable GPIO (1=Enabled, 0=Disabled)."
         },
         {
-          "bit_field": "159-140",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "139-128",
-          "name": "RESERVED",
-          "access_type": "R",
-          "reset": "0h",
-          "description": "Reserved"
-        },
-        {
-          "bit_field": "127-109",
+          "bit_field": "159-109",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -3987,7 +3474,7 @@
           "name": "Initial Value",
           "access_type": "R",
           "reset": "0h",
-          "description": "Controls default output level for each GPIO enabled as output  (0=Drive Low, 1=Drive High)"
+          "description": "Controls default output level for each GPIO enabled as output (0=Drive Low, 1=Drive High)"
         },
         {
           "bit_field": "63-45",
@@ -4000,8 +3487,8 @@
           "bit_field": "44-32",
           "name": "GPIO Interrupt Enable",
           "access_type": "R",
-          "reset": "400h",
-          "description": "Controls interrupt enable for each GPIO (1=Interrupt Enabled,  0=Interrupt Disabled). Note that all GPIO pins may not be configured as inputs (see the data-sheet)."
+          "reset": "0h",
+          "description": "Controls interrupt enable for each GPIO (1=Interrupt Enabled, 0=Interrupt Disabled). Note that all GPIO pins may not be configured as inputs (see the data-sheet)."
         },
         {
           "bit_field": "31-13",
@@ -4014,7 +3501,7 @@
           "bit_field": "12-0",
           "name": "GPIO Output Enable",
           "access_type": "R",
-          "reset": "14CFh",
+          "reset": "CCFh",
           "description": "Controls output enable for each GPIO (1=Output Enabled, 0=Hi-Z). Note that all GPIO may not be configurable as an output (see data- sheet)."
         }
       ]
@@ -4024,14 +3511,15 @@
       "name": "Type C State",
       "width": 32,
       "reset": "00000000h",
-      "description": "Contains current status of both CCn pins. Table 3-25. Type C State Register Field Descriptions",
+      "description": "Contains current status of both CCn pins.",
+      "source_page": 50,
       "fields": [
         {
           "bit_field": "31-24",
           "name": "TypeC Port State",
           "access_type": "R",
           "reset": "0h",
-          "description": "Present state of Type-C state-machine. 0h = Disabled 5h = ErrorRecovery 24h = Unattached.Accessory 2Bh = AttachWait.Accessory 45h = Try.SRC 4Eh = TryWait.SNK 4Fh = Try.SNK 50h = TryWait.SRC 60h = Attached.SRC 61h = Attached.SNK 62h = AudioAccessory 63h = DebugAccessory 64h = AttachWait.SRC 65h = AttachWait.SNK 66h = Unattached.SNK 67h = Unattached.SRC",
+          "description": "Present state of Type-C state-machine.",
           "values": {
             "0h": "Disabled",
             "5h": "ErrorRecovery",
@@ -4056,7 +3544,7 @@
           "name": "CC2 Pin State",
           "access_type": "R",
           "reset": "0h",
-          "description": "State of CC2 pin 0h = Not connected 1h = Ra detected (Source only)  2h = Rd detected (Source only)  3h = USB Default Advertisement detected (SInk only)  4h = 1.5A Advertisement detected (Sink Only)  5h = 3.0A Advertisement detected (Sink Only)",
+          "description": "State of CC2 pin",
           "values": {
             "0h": "Not connected",
             "1h": "Ra detected (Source only)",
@@ -4071,7 +3559,7 @@
           "name": "CC1 Pin State",
           "access_type": "R",
           "reset": "0h",
-          "description": "State of CC1 pin 0h = Not connected 1h = Ra detected (Source only)  2h = Rd detected (Source only)  3h = USB Default Advertisement detected (SInk only)  4h = 1.5A Advertisement detected (Sink Only)  5h = 3.0A Advertisement detected (Sink Only)",
+          "description": "State of CC1 pin",
           "values": {
             "0h": "Not connected",
             "1h": "Ra detected (Source only)",
@@ -4086,7 +3574,7 @@
           "name": "CC Pin for PD",
           "access_type": "R",
           "reset": "0h",
-          "description": "CC pin used for PD communication. 0h = Not connected 1h = CC1 is used for USB PD communication 2h = CC2 is used for USB PD communication",
+          "description": "CC pin used for PD communication.",
           "values": {
             "0h": "Not connected",
             "1h": "CC1 is used for USB PD communication",
@@ -4100,7 +3588,8 @@
       "name": "ADC Results",
       "width": 104,
       "reset": "00000000000000000000000000h",
-      "description": "Provides access to measurements from the internal ADC. The PD controller periodically measures the pins mentioned in this register and updates the register accordingly. The frequency of the update depends upon the mode of the PD controller. For example, in Unconnected Sleep the PD controller will not update these registers. Table 3-26. ADC Results Register Field Descriptions",
+      "description": "Provides access to measurements from the internal ADC. The PD controller periodically measures the pins mentioned in this register and updates the register accordingly. The frequency of the update depends upon the mode of the PD controller. For example, in Unconnected Sleep the PD controller will not update these registers. This register should only be used for debug purposes and not for end solutions.",
+      "source_page": 51,
       "fields": [
         {
           "bit_field": "103-96",
@@ -4111,10 +3600,10 @@
         },
         {
           "bit_field": "95-88",
-          "name": "IVBUS1_Mean",
+          "name": "IVBUS_Peak",
           "access_type": "R",
           "reset": "0h",
-          "description": "Most recent current peak estimate through PP_5V1. If PORT_CONTROL.EnableCurrentMonitor = 1, this field is an estimate of the recent mean current. It is cleared upon attach for a new connection.(16.5mA per LSB)"
+          "description": "Most recent current peak estimate through poewr path. If PORT_CONTROL.EnableCurrentMonitor = 1, this field is an estimate of the recent peak current. It is cleared upon attach for a new connection.(16.5mA per LSB)"
         },
         {
           "bit_field": "87-80",
@@ -4153,10 +3642,10 @@
         },
         {
           "bit_field": "47-40",
-          "name": "IVBUS1",
+          "name": "IVBUS_Mean",
           "access_type": "R",
           "reset": "0h",
-          "description": "Most recent current measurement through PP_5V1. (16.5mA per LSB)"
+          "description": "Most recent current mean estimate through power path. If PORT_CONTROL.EnableCurrentMonitor = 1, this field is an estimate of the recent mean current. It is cleared upon attach for a new connection.(16.5mA per LSB)"
         },
         {
           "bit_field": "39-32",
@@ -4167,10 +3656,10 @@
         },
         {
           "bit_field": "31-24",
-          "name": "VBUS1",
+          "name": "VBUS",
           "access_type": "R",
           "reset": "0h",
-          "description": "Most recent voltage on the PA_VBUS pin. (98mV per LSB)"
+          "description": "Most recent voltage on the VBUS pin. (98mV per LSB)"
         },
         {
           "bit_field": "23-16",
@@ -4199,8 +3688,9 @@
       "offset": "70h",
       "name": "Sleep Control",
       "width": 8,
-      "reset": "01h",
-      "description": "Sleep configurations. Table 3-27. Sleep Control Register Field Descriptions",
+      "reset": "03h",
+      "description": "Sleep configurations.",
+      "source_page": 52,
       "fields": [
         {
           "bit_field": "7-3",
@@ -4213,12 +3703,12 @@
           "bit_field": "2-1",
           "name": "Sleep Time",
           "access_type": "R/W",
-          "reset": "0h",
-          "description": "Minimum time the PD controller waits before entering sleep mode. 0h = Reserved 1h = 100 ms 2h = 1200 ms 3h = Reserved",
+          "reset": "1h",
+          "description": "Minimum time the PD controller waits before entering sleep mode.",
           "values": {
             "0h": "Reserved",
             "1h": "100 ms",
-            "2h": "1200 ms",
+            "2h": "1000 ms",
             "3h": "Reserved"
           }
         },
@@ -4236,7 +3726,8 @@
       "name": "GPIO Status",
       "width": 64,
       "reset": "0000000000000000h",
-      "description": "Captures status and settings of all GPIO pins. Check the device-specific datasheet for the available GPIO because it may vary by device type. Table 3-28. GPIO Status Register Field Descriptions",
+      "description": "Captures status and settings of all GPIO pins. Check the device-specific datasheet for the available GPIO because it may vary by device type.",
+      "source_page": 53,
       "fields": [
         {
           "bit_field": "63-40",
@@ -4316,7 +3807,21 @@
           "description": "Asserted if a logic high is detected on the GPIO."
         },
         {
-          "bit_field": "11-8",
+          "bit_field": "11-11",
+          "name": "GPIO 11 Data",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "Asserted if a logic high is detected on the GPIO."
+        },
+        {
+          "bit_field": "10-10",
+          "name": "GPIO 10 Data",
+          "access_type": "R",
+          "reset": "0h",
+          "description": "Asserted if a logic high is detected on the GPIO."
+        },
+        {
+          "bit_field": "9-8",
           "name": "RESERVED",
           "access_type": "R",
           "reset": "0h",
@@ -4381,11 +3886,575 @@
       ]
     },
     {
+      "offset": "77h",
+      "name": "Tx Source Capabilities Extended Data Block",
+      "width": 120,
+      "reset": "000000000000000000000000000000h",
+      "description": "Transmit Source Capabilities Extended Data Block (SCEDB). If the PD3 configuration register (0x42) bit SourceCapExtMsg is set to zero, the PD controller responds to a Get_Source_Cap_Extended USB PD message with a Not_Supported message. If the SourceCapExtMsg bit is set to 1 then the response is generated from the contents of this register based on USB PD requirements. The VID, PID, and XID fields are taken from the PD internal firmware configurable through the Application Customization Tool, the FW version is taken from the PD internal firmware, the HW version is taken from the REV_ID word in the Boot Flags register (0x2D), then the contents of this register are appended.",
+      "source_page": 54,
+      "fields": [
+        {
+          "bit_field": "119-111",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "110-104",
+          "name": "Source PDP",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Source's PDP rating as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "103-100",
+          "name": "Number Hot Swappable Batteries",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Number of hot swappable batteries / battery slots as defined by the USB PD specification. (Max of 4)"
+        },
+        {
+          "bit_field": "99-96",
+          "name": "Number Fixed Batteries",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Number of fixed batteries / battery slots as defined by the USB PD specification. (Max of 4)"
+        },
+        {
+          "bit_field": "95-88",
+          "name": "Source Inputs",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Source inputs as defined by the USB PD specification. The Barrel_Jack_Event GPIO Event can modify bit 0 of this field automatically upon rising and falling edges. The host may choose to set bit 1 of this field to 1 when it enables the Barrel_Jack_Event GPIO Event."
+        },
+        {
+          "bit_field": "87-80",
+          "name": "Touch Temperature",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Touch temperature as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "79-64",
+          "name": "Peak Current 3",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Peak Current 3 as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "63-48",
+          "name": "Peak Current 2",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Peak Current 2 as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "47-32",
+          "name": "Peak Current 1",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Peak Current 1 as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "31-24",
+          "name": "Touch Current",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Touch current as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "23-16",
+          "name": "Compliance",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Compliance as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "15-8",
+          "name": "Hold Up Time",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Hold up time as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "7-0",
+          "name": "Voltage Regulation",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Voltage regulation as defined by the USB PD specification."
+        }
+      ]
+    },
+    {
+      "offset": "78h",
+      "name": "TX Source Info",
+      "width": 64,
+      "reset": "8000000080000000h",
+      "description": "Transmit Source info. If the PD3 configuration register (0x42) bit SupportGetSourceInfo is set to 0 and a Get_Source_Info message is received, then this register is ignored and the PD controller sends a Not_Supported message. If the SupportGetSourceInfo bit is set to 1 and a Get_Source_Info message is received then the contents of this register are sent in response. This register is automatically updated by the PD firmware and does not require any EC implementation.",
+      "source_page": 55,
+      "fields": [
+        {
+          "bit_field": "63-63",
+          "name": "PortType",
+          "access_type": "R/W",
+          "reset": "1h",
+          "description": "Managed or Guaranteed Capability Port: Managed = 0, Guaranteed = 1"
+        },
+        {
+          "bit_field": "62-62",
+          "name": "DPSPort",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "DPS Port. If set, then PortType shall be 0 (Managed Capability Port)"
+        },
+        {
+          "bit_field": "61-50",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "49-41",
+          "name": "PortMaximumPDP_0p5W",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Maximum power the port will provide in 0.5W steps. (0.5W per LSB)"
+        },
+        {
+          "bit_field": "40-32",
+          "name": "PortGuaranteedPDP_0p5 W",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Minimum power the port is guaranteed to always be able to provide in 0.5W steps. (0.5W per LSB)"
+        },
+        {
+          "bit_field": "31-31",
+          "name": "Port Type",
+          "access_type": "R/W",
+          "reset": "1h",
+          "description": "Managed or Guaranteed Capability Port: Managed = 0, Guaranteed = 1"
+        },
+        {
+          "bit_field": "30-24",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "23-16",
+          "name": "Port Maximum PDP",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Power the port is designed to supply. (1W per LSB)"
+        },
+        {
+          "bit_field": "15-8",
+          "name": "Port Present PDP",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Power the port is presently capable of supplying. (1W per LSB)"
+        },
+        {
+          "bit_field": "7-0",
+          "name": "Port Reported PDP",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Power the port is actually advertising. (1W per LSB)"
+        }
+      ]
+    },
+    {
+      "offset": "7Ah",
+      "name": "Transmitted PPS Status Data Block",
+      "width": 32,
+      "reset": "00000000h",
+      "description": "Transmit PPS Status Data Block (BSDO). If the PD3 configuration register (0x42) bit SupportPPSStatus is set to zero and a Get_PPS_Status message is received, then this register is ignored and the PD controller sends a Not_Supported message. If the SupportPPSStatus bit is set to 1 and a Get_PPS_Status message is received then the contents of this register are sent in response.",
+      "source_page": 56,
+      "fields": [
+        {
+          "bit_field": "31-28",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "27-27",
+          "name": "OMF",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Operating Mode Flag (OMF), indicates if running in Constant Voltage (CV - 0b) or Current Limit (CL - 1b) mode."
+        },
+        {
+          "bit_field": "26-25",
+          "name": "PTF",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Present Temperature Flag (PTF), indicates if temperature is normal (01b), warning zone (10b), or over-temperature (11b)."
+        },
+        {
+          "bit_field": "24-24",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "23-16",
+          "name": "Output Current",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Output current as defined by the USB PD spec. (50mA per LSB). 0xFF = this field not supported"
+        },
+        {
+          "bit_field": "15-0",
+          "name": "Output Voltage",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Output voltage as defined by the USB PD spec.(20mV per LSB, 0xFFFF = this field not supported)"
+        }
+      ]
+    },
+    {
+      "offset": "7Bh",
+      "name": "Transmitted Battery Status Data Objects (BSDO)",
+      "width": 128,
+      "reset": "000000000000000000000000FFFF0200h",
+      "description": "Transmit Battery Status Data Objects (BSDO). The host should also program the Tx Source Capabilities Extended register (0x77) in order to specify the number of each type of battery such that it is consistent with the contents of this register. This feature must be enabled in the PD3_CONFIG register (0x42) SupportBatteryStatusMsg bit. The PD controller does not take any automatic action if this register is written. If the SupportBatteryStatusMsg bit is set to 0 and a Get_Battery_Status message is received, then this register is ignored and the PD controller sends a Not_Supported message. If the SupportBatteryStatusMsg bit is set to 1, and a Get_Battery_Status message is received then the contents of this register are sent in response.",
+      "source_page": 57,
+      "fields": [
+        {
+          "bit_field": "127-112",
+          "name": "Battery 3 Present Info",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery status data object returned for battery index 3."
+        },
+        {
+          "bit_field": "111-104",
+          "name": "Battery 3 Battery Info",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery status data object returned for battery index 3."
+        },
+        {
+          "bit_field": "103-96",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "95-80",
+          "name": "Battery 2 Present Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery status data object returned for battery index 2."
+        },
+        {
+          "bit_field": "79-72",
+          "name": "Battery 2 Battery Info",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery status data object returned for battery index 2."
+        },
+        {
+          "bit_field": "71-64",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "63-48",
+          "name": "Battery 1 Present Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery status data object returned for battery index 1."
+        },
+        {
+          "bit_field": "47-40",
+          "name": "Battery 1 Battery Info",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery status data object returned for battery index 1."
+        },
+        {
+          "bit_field": "39-32",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "31-16",
+          "name": "Battery 0 Present Capacity",
+          "access_type": "R/W",
+          "reset": "FFFFh",
+          "description": "Battery status data object returned for battery index 0."
+        },
+        {
+          "bit_field": "15-8",
+          "name": "Battery 0 Battery Info",
+          "access_type": "R/W",
+          "reset": "2h",
+          "description": "Battery status data object returned for battery index 0."
+        },
+        {
+          "bit_field": "7-0",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        }
+      ]
+    },
+    {
+      "offset": "7Dh",
+      "name": "Tx Battery Capabilities",
+      "width": 288,
+      "reset": "000000000000000000000000000000000000000000000000000000000000000000000000h",
+      "description": "Transmit Battery Capability Data Block (BCDB). The host should also program the Tx Source Capabilities Extended register (0x77) in order to specify the number of each type of battery such that it is consistent with the contents of this register. This feature must be enabled in the PD3_CONFIG register (0x42) bit SupportBatteryCapMsg. The PD controller does not take any automatic action if this register is written. If the SupportBatteryCapMsg is 0 and a Get_Battery_Capabilities message is received, then the contents of this register are ignored and the PD controller sends a Not_Supported message. If the SupportBatteryCapMsg is 1 and a Get_Battery_Capabilities message is received, then the contents of this register are sent in response.",
+      "source_page": 58,
+      "fields": [
+        {
+          "bit_field": "287-280",
+          "name": "Battery Type",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery type for battery index 0."
+        },
+        {
+          "bit_field": "279-264",
+          "name": "Battery Last Full Charge Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery last full charge capacity for battery index 0."
+        },
+        {
+          "bit_field": "263-248",
+          "name": "Battery Design Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery design capacity for battery index 0."
+        },
+        {
+          "bit_field": "247-232",
+          "name": "PID 3",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "PID for battery index 0."
+        },
+        {
+          "bit_field": "231-216",
+          "name": "VID 3",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "VID for battery index 0."
+        },
+        {
+          "bit_field": "215-208",
+          "name": "Battery Type",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery type for battery index 2."
+        },
+        {
+          "bit_field": "207-192",
+          "name": "Battery Last Full Charge Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery last full charge capacity for battery index 2."
+        },
+        {
+          "bit_field": "191-176",
+          "name": "Battery Design Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery design capacity for battery index 2."
+        },
+        {
+          "bit_field": "175-160",
+          "name": "PID 2",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "PID for battery index 2."
+        },
+        {
+          "bit_field": "159-144",
+          "name": "VID 2",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "VID for battery index 2."
+        },
+        {
+          "bit_field": "143-136",
+          "name": "Battery Type",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery type for battery index 1."
+        },
+        {
+          "bit_field": "135-120",
+          "name": "Battery Last Full Charge Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery last full charge capacity for battery index 1."
+        },
+        {
+          "bit_field": "119-104",
+          "name": "Battery Design Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery design capacity for battery index 1."
+        },
+        {
+          "bit_field": "103-88",
+          "name": "PID 1",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "PID for battery index 1."
+        },
+        {
+          "bit_field": "87-72",
+          "name": "VID 1",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "VID for battery index 1."
+        },
+        {
+          "bit_field": "71-64",
+          "name": "Battery Type",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery type for battery index 0."
+        },
+        {
+          "bit_field": "63-48",
+          "name": "Battery Last Full Charge Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery last full charge capacity for battery index 0."
+        },
+        {
+          "bit_field": "47-32",
+          "name": "Battery Design Capacity",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery design capacity for battery index 0."
+        },
+        {
+          "bit_field": "31-16",
+          "name": "PID 0",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "PID for battery index 0."
+        },
+        {
+          "bit_field": "15-0",
+          "name": "VID 0",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "VID for battery index 0."
+        }
+      ]
+    },
+    {
+      "offset": "7Eh",
+      "name": "Transmit Sink Capabilities Extended Data Block",
+      "width": 112,
+      "reset": "0000000000000000000000000000h",
+      "description": "Transmit Sink Capabilities Data Block (SKEDB). This feature must be enabled in the PD3_CONFIG register (0x42) bit SupportSinkCapExtended. The PD controller does not take any automatic action if this register is written. If the SupportSinkCapExtended bit is 0 and a Get_Sink_Cap_Extended message is received, then the contents of this register are ignored and the PD controller sends a Not_Supported message. If the SupportSinkCapExtended bit is 1 and a Get_Sink_Cap_Extended message is received, then the contents of this register are used to formulate the response. The VID, PID, and XID fields are taken from the PD internal firmware configurable through the Application Customization Tool, the FW version is taken from the PD internal firmware, the HW version is taken from the REV_ID word in the Boot Flags register (0x2D). Finally, the PD controller appends the contents of this register. Refer to the latest USB PD specification for detailed description of each field. The values in this register are not used by the PD controller to affect behavior, it just simply uses these contents to respond.",
+      "source_page": 59,
+      "fields": [
+        {
+          "bit_field": "111-88",
+          "name": "RESERVED",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Reserved"
+        },
+        {
+          "bit_field": "87-80",
+          "name": "Sink Maximum PDP",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Sink maximum PDP as defined in the USB PD specification."
+        },
+        {
+          "bit_field": "79-72",
+          "name": "Sink Operational PDP",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Sink operational PDP as defined in the USB PD specification."
+        },
+        {
+          "bit_field": "71-64",
+          "name": "Sink Minimum PDP",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Sink minimum PDP as defined in the USB PD specification."
+        },
+        {
+          "bit_field": "63-56",
+          "name": "Sink Modes",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Sink modes as defined in the USB PD specification."
+        },
+        {
+          "bit_field": "55-48",
+          "name": "Battery Info",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Battery information as defined in the USB PD specification."
+        },
+        {
+          "bit_field": "47-40",
+          "name": "Touch Temprature",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Touch temperature as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "39-32",
+          "name": "Compliance",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Compliance as defined by the USB PD specification."
+        },
+        {
+          "bit_field": "31-16",
+          "name": "Sink Load Char",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Sink load characteristics as defined in the USB PD specification."
+        },
+        {
+          "bit_field": "15-8",
+          "name": "Load Step",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "Load step as defined in the USB PD specification."
+        },
+        {
+          "bit_field": "7-0",
+          "name": "SKEDB Version",
+          "access_type": "R/W",
+          "reset": "0h",
+          "description": "SKEDB Version as defined in the USB PD specification."
+        }
+      ]
+    },
+    {
       "offset": "98h",
-      "name": "Liquid Detection Config",
+      "name": "Liquid Detection Configuration",
       "width": 83,
       "reset": "000000000000000000000h",
-      "description": "Liquid Detection Configuration Table 3-29. Liquid Detection Config Register Field Descriptions",
+      "source_page": 60,
       "fields": [
         {
           "bit_field": "82-82",
@@ -4399,7 +4468,7 @@
           "name": "Enable Corrosion Mitigation",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Enable corrosion mitigation. Corrosion mitigation will disconnect the port, disabled the port, and pull down CC pins."
+          "description": "Enable corrosion mitigation. Corrosion mitigation will disconnect the port, disable the port, and pull down CC pins. Type-C error-recovery will be triggered when the port transitions to no-moisture state."
         },
         {
           "bit_field": "80-80",
@@ -4455,21 +4524,21 @@
           "name": "Number of Samples",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Number of samples (must be 2N) to take average"
+          "description": "Number of samples used for averaging. Valid values must be powers of two (1, 2, 4, 8, ...)"
         },
         {
           "bit_field": "31-16",
-          "name": "Sleep Time In Sec Liquid",
+          "name": "Wait Time In Sec Liquid",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Sleep in multiples of 1s when liquid is detected (1000ms per LSB as ms)"
+          "description": "Wait in multiples of 1s when liquid is detected (1000ms per LSB as ms)"
         },
         {
           "bit_field": "15-0",
-          "name": "Sleep Time In Sec No Liquid",
+          "name": "Wait Time In Sec Non-Liquid",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "Sleep in multiples of 1s when liquid is not detected. (1000ms per LSB as ms)"
+          "description": "Wait in multiples of 1s when liquid is not detected. (1000ms per LSB as ms)"
         }
       ]
     }
