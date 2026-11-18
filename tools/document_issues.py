@@ -196,19 +196,24 @@ def form_url(document: str, part: str) -> str:
     return f"{FEEDBACK_URL}?{urlencode({'litnum': document, 'partnum': part} if part else {'litnum': document})}"
 
 
-def feedback_text(issue: dict[str, Any], part: str) -> str:
-    url = form_url(issue["document"], part)
-    lines = [
-        f"=== {issue['id']} ({issue['status']}) ===",
-        f"Form:                 {url}",
-        f"Literature Number:    {issue['document']}",
-        f"Part Number:          {part}",
-        f"Summary:              {issue['summary']}",
-        f"Severity:             {issue['severity']}",
-        f"Page Number(s):       {pages_text(issue['page'])}",
-        "Detailed description:",
+def form_fields(issue: dict[str, Any], part: str) -> list[tuple[str, str]]:
+    """(label, value) for each field of the feedback form, labeled as the form labels it."""
+    return [
+        ("Literature Number", issue["document"]),
+        ("Part Number", part),
+        ("Summary", issue["summary"]),
+        ("Severity", issue["severity"]),
+        ("Page Number(s)", pages_text(issue["page"])),
+        ("Detailed description", issue["description"]),
     ]
-    lines += issue["description"].splitlines() or [""]
+
+
+def feedback_text(issue: dict[str, Any], part: str) -> str:
+    *short, (desc_label, desc) = form_fields(issue, part)
+    lines = [f"=== {issue['id']} ({issue['status']}) ===",
+             f"{'Form:':22}{form_url(issue['document'], part)}"]
+    lines += [f"{label + ':':22}{value}" for label, value in short]
+    lines += [f"{desc_label}:"] + (desc.splitlines() or [""])
     return "\n".join(lines)
 
 
@@ -321,13 +326,17 @@ header p, .meta, figcaption { color: var(--muted); }
 nav a { margin-right: 1em; }
 section { border-top: 1px solid var(--line); margin-top: 32px; padding-top: 8px; }
 h2 code { font-size: 0.9em; }
-.desc { white-space: pre-wrap; }
 .note { border-left: 4px solid var(--bad); padding: 4px 12px; background: var(--card); }
 ul.evidence { list-style: none; padding-left: 0; }
 .found { color: var(--ok); } .missing { color: var(--bad); font-weight: 600; }
 figure { margin: 16px 0; }
 figure img { max-width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
 pre { background: var(--card); padding: 12px; overflow-x: auto; white-space: pre-wrap; }
+table.form { border-collapse: collapse; width: 100%; }
+table.form th { text-align: left; vertical-align: top; padding: 8px 12px 8px 0; white-space: nowrap; width: 1%; }
+table.form td { padding: 4px 0; }
+table.form pre { margin: 0; padding: 8px; font: inherit; }
+@media (max-width: 600px) { table.form th, table.form td { display: block; width: auto; } }
 """
 
 
@@ -343,14 +352,20 @@ def review(issues: list[dict[str, Any]], manifest_path: Path, part: str, out: Pa
     sections = []
     for issue in issues:
         iid = issue["id"]
-        where = " ".join(x for x in (issue.get("register"), issue.get("bits") and f"bits {issue['bits']}") if x)
+        meta = " · ".join(f"{label}: {esc(issue[key])}" for label, key in
+                          (("Status", "status"), ("Register", "register"), ("Bits", "bits"), ("Validator check", "check"))
+                          if issue.get(key))
         body = [
             f'<section id="{esc(iid)}"><h2><code>{esc(iid)}</code></h2>',
-            f'<p class="meta">{esc(issue["status"])} · {esc(issue["severity"])} · {esc(issue["document"])} '
-            f'· page {esc(pages_text(issue["page"]))}{" · " + esc(where) if where else ""} · check: {esc(issue["check"])}</p>',
-            f"<p><strong>{esc(issue['summary'])}</strong></p>",
-            f'<p class="desc">{esc(issue["description"])}</p>',
+            f'<p class="meta">{meta}</p>',
         ]
+        url = form_url(issue["document"], part)
+        rows = "".join(f"<tr><th scope=\"row\">{esc(label)}</th><td><pre>{esc(value)}</pre></td></tr>"
+                       for label, value in form_fields(issue, part))
+        body.append(f'<h3>Feedback form fields</h3><p><a href="{esc(url)}" target="_blank" rel="noopener">Open the form</a> '
+                    "and copy each value into the field with the same label.</p>")
+        body.append(f'<table class="form">{rows}</table>')
+        body.append("<h3>Evidence</h3>")
         pdf_path, note = _pdf_for(issue["document"], docs, pdf_override, cache)
         if note:
             body.append(f'<p class="note">{esc(note)}</p>')
@@ -383,13 +398,12 @@ def review(issues: list[dict[str, Any]], manifest_path: Path, part: str, out: Pa
                         f'<figure><a href="{esc(link)}"><img src="{esc(name)}" alt="Page {pno} of {esc(issue["document"])}"></a>'
                         f'<figcaption>Page {pno} of {esc(pdf_path.name)}. Select the image to open the PDF at this page.'
                         "</figcaption></figure>")
-        body.append("<h3>Feedback form text</h3>")
-        body.append(f"<pre>{esc(feedback_text(issue, part))}</pre></section>")
+        body.append("</section>")
         sections.append("\n".join(body))
 
     nav = " ".join(f'<a href="#{esc(i["id"])}">{esc(i["id"])}</a>' for i in issues)
     forms = "".join(
-        f'<li><a href="{esc(form_url(doc, part))}">TI documentation feedback form for {esc(doc)}</a></li>'
+        f'<li><a href="{esc(form_url(doc, part))}" target="_blank" rel="noopener">TI documentation feedback form for {esc(doc)}</a></li>'
         for doc in dict.fromkeys(i["document"] for i in issues))
     page = out / "index.html"
     page.write_text(
