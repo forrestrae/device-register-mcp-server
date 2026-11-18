@@ -20,7 +20,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-from document_issues import load_issues, problems  # noqa: E402
+from document_issues import load_issues, mark_reported, problems  # noqa: E402
 from validate_registers import Report, apply_known_issues, check_schema, check_structure  # noqa: E402
 
 MANIFESTS = sorted(ROOT.glob("devices/*/device.json"))
@@ -99,6 +99,50 @@ def test_feedback_form_rules(change, expected):
         assert not found
     else:
         assert any(expected in p for p in found), found
+
+
+@pytest.mark.parametrize("change, expected", [
+    ({"status": "reported", "reported": {"date": "2026-11-18"}}, None),
+    ({"status": "fixed", "reported": {"date": "2026-11-18"}}, None),
+    ({"status": "open", "reported": {"date": "2026-11-18"}}, "status is still open"),
+    ({"status": "reported", "reported": "2026-11-18"}, "must be an object"),
+    ({"status": "reported", "reported": {"date": "11/18/2026"}}, "YYYY-MM-DD"),
+    ({"status": "reported", "reported": {"date": "2026-02-30"}}, "YYYY-MM-DD"),
+    ({"status": "reported", "reported": {"date": "2026-11-18", "reference": "x"}}, "unknown key"),
+])
+def test_reported_validation(change, expected):
+    found = problems([{**BASE_ISSUE, **change}])
+    if expected is None:
+        assert not found
+    else:
+        assert any(expected in p for p in found), found
+
+
+def _issue_file(tmp_path, *issues):
+    (tmp_path / "known_document_issues.json").write_text(json.dumps({"issues": list(issues)}))
+    return tmp_path / "device.json"
+
+
+def test_mark_reported(tmp_path):
+    from datetime import date
+    manifest = _issue_file(tmp_path, {**BASE_ISSUE, "id": "a"}, {**BASE_ISSUE, "id": "b"})
+    mark_reported(manifest, ["a"], date(2026, 11, 18))
+    mark_reported(manifest, ["b"], date(2026, 11, 17))
+    a, b = load_issues(manifest)
+    assert a["status"] == "reported" and a["reported"] == {"date": "2026-11-18"}
+    assert b["reported"] == {"date": "2026-11-17"}
+    assert list(a).index("reported") == list(a).index("status") + 1
+    assert not problems([a, b])
+
+
+@pytest.mark.parametrize("status, ids", [("open", ["missing"]), ("fixed", ["a"])])
+def test_mark_reported_refuses(tmp_path, status, ids):
+    from datetime import date
+    manifest = _issue_file(tmp_path, {**BASE_ISSUE, "id": "a", "status": status})
+    before = (tmp_path / "known_document_issues.json").read_text()
+    with pytest.raises(SystemExit):
+        mark_reported(manifest, ids, date(2026, 11, 18))
+    assert (tmp_path / "known_document_issues.json").read_text() == before
 
 
 def test_evidence_found_in_pdf(device):

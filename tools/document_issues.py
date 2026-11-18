@@ -28,7 +28,9 @@ Issue fields:
   evidence     optional list of {"page": N, "text": "..."}: exact strings on the
                cited pages that show the problem; `review` boxes them in red
   status       "open", "reported", or "fixed"
-  reported     optional {"date": "YYYY-MM-DD", "reference": "..."} once filed
+  reported     {"date": "YYYY-MM-DD"}: when the issue was filed. TI's form gives
+               no reference number, so the date is the whole record. Set by the
+               `reported` command.
 
 Before filing, `review` renders each cited page with its evidence boxed and
 writes a local HTML page beside the form text, so a person can confirm every
@@ -41,6 +43,7 @@ Usage:
   uv run --group tools tools/document_issues.py discover devices/bq25798/device.json --pdf DOC.pdf [--write]
   uv run --group tools tools/document_issues.py review devices/bq25798/device.json [ID ...] [--pdf DOC.pdf] [--out DIR] [--open]
   uv run --group tools tools/document_issues.py feedback devices/bq25798/device.json [ID ...]
+  uv run --group tools tools/document_issues.py reported devices/bq25798/device.json ID [ID ...] [--date YYYY-MM-DD]
 """
 
 from __future__ import annotations
@@ -99,6 +102,40 @@ def problems(issues: list[dict[str, Any]]) -> list[str]:
             out.append(f"{label}: bits must be 'high-low'")
         out += [f"{label}: {p}" for p in evidence_problems(issue)]
         out += [f"{label}: {p}" for p in form_problems(issue)]
+        out += [f"{label}: {p}" for p in reported_problems(issue)]
+    return out
+
+
+def parse_date(text: str) -> date:
+    """A YYYY-MM-DD date; raises ValueError otherwise."""
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        raise ValueError(f"{text!r} is not a YYYY-MM-DD date")
+    return date.fromisoformat(text)
+
+
+def date_arg(text: str) -> date:
+    try:
+        return parse_date(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a YYYY-MM-DD date") from None
+
+
+def reported_problems(issue: dict[str, Any]) -> list[str]:
+    if "reported" not in issue:
+        return []
+    rep = issue["reported"]
+    if not isinstance(rep, dict):
+        return ['reported must be an object: {"date": "YYYY-MM-DD"}']
+    out = []
+    if issue.get("status") == "open":
+        out.append("reported is set but status is still open")
+    try:
+        parse_date(rep.get("date") if isinstance(rep.get("date"), str) else "")
+    except ValueError:
+        out.append("reported.date must be a YYYY-MM-DD date")
+    extra = set(rep) - {"date"}
+    if extra:
+        out.append(f"reported has unknown key(s): {', '.join(sorted(extra))}")
     return out
 
 
@@ -215,6 +252,43 @@ def feedback_text(issue: dict[str, Any], part: str) -> str:
     lines += [f"{label + ':':22}{value}" for label, value in short]
     lines += [f"{desc_label}:"] + (desc.splitlines() or [""])
     return "\n".join(lines)
+
+
+# ---- reporting ----------------------------------------------------------------
+
+def mark_reported(manifest_path: Path, ids: list[str], when: date) -> list[str]:
+    """Set each issue's status to "reported" and record the date it was filed.
+
+    Returns one line per issue describing the change. Raises SystemExit(2) for an
+    unknown id or an issue already marked fixed, before writing anything."""
+    path = issues_path(manifest_path)
+    data = json.loads(path.read_text()) if path.exists() else {"issues": []}
+    by_id = {i.get("id"): i for i in data["issues"]}
+    missing = [i for i in ids if i not in by_id]
+    if missing:
+        print(f"unknown issue id(s): {', '.join(missing)}", file=sys.stderr)
+        raise SystemExit(2)
+    fixed = [i for i in ids if by_id[i].get("status") == "fixed"]
+    if fixed:
+        print(f"already fixed, not changed: {', '.join(fixed)}", file=sys.stderr)
+        raise SystemExit(2)
+
+    record = {"date": when.isoformat()}
+    lines = []
+    for iid in dict.fromkeys(ids):
+        issue = by_id[iid]
+        before = issue.get("reported")
+        # Rebuild the entry so "reported" sits right after "status".
+        items = [(k, v) for k, v in issue.items() if k != "reported"]
+        issue.clear()
+        for k, v in items:
+            issue[k] = "reported" if k == "status" else v
+            if k == "status":
+                issue["reported"] = dict(record)
+        lines.append(f"{iid}: reported {record['date']}"
+                     + (f" (was {json.dumps(before)})" if before else ""))
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    return lines
 
 
 # ---- discovery ----------------------------------------------------------------
@@ -420,7 +494,7 @@ def review(issues: list[dict[str, Any]], manifest_path: Path, part: str, out: Pa
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("list", "feedback", "discover", "review"):
+    for name in ("list", "feedback", "discover", "review", "reported"):
         p = sub.add_parser(name)
         p.add_argument("manifest", type=Path)
         if name in ("feedback", "review"):
@@ -429,6 +503,10 @@ def main() -> int:
             p.add_argument("--pdf", type=Path, help="document to render (default: found in docs/ by literature number)")
             p.add_argument("--out", type=Path, help="output folder (default: <device>/docs/review, gitignored)")
             p.add_argument("--open", action="store_true", help="open the page in the default browser")
+        if name == "reported":
+            p.add_argument("ids", nargs="+", help="ids of the issues you filed")
+            p.add_argument("--date", type=date_arg, default=date.today(),
+                           help="date filed, YYYY-MM-DD (default: today)")
         if name == "discover":
             p.add_argument("--pdf", type=Path, required=True)
             p.add_argument("--write", action="store_true", help=f"append candidates to {ISSUES_FILE}")
@@ -461,12 +539,17 @@ def main() -> int:
             webbrowser.open(page.as_uri())
         return 0
 
+    if args.cmd == "reported":
+        for line in mark_reported(args.manifest, args.ids, args.date):
+            print(line)
+        print(f"Updated {issues_path(args.manifest)}")
+        return 0
+
     if args.cmd == "feedback":
         chosen = select(issues, args.ids)
         print("\n\n".join(feedback_text(i, part) for i in chosen) or "No open issues.")
         if chosen:
-            print("\nAfter filing, set each issue's status to \"reported\" and add "
-                  "\"reported\": {\"date\": ..., \"reference\": ...}.")
+            print(f"\nAfter filing, record it: document_issues.py reported {args.manifest} ID")
         return 0
 
     candidates = discover(args.manifest, args.pdf)

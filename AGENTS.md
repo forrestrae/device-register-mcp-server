@@ -372,6 +372,7 @@ uv run --group tools tools/document_issues.py list devices/bq25798/device.json
 uv run --group tools tools/document_issues.py discover devices/bq25798/device.json --pdf <doc.pdf>
 uv run --group tools tools/document_issues.py review devices/bq25798/device.json --open
 uv run --group tools tools/document_issues.py feedback devices/bq25798/device.json
+uv run --group tools tools/document_issues.py reported devices/bq25798/device.json <ID>
 ```
 
 `discover` drafts entries for structural problems found in the PDF itself (`--write`
@@ -396,9 +397,22 @@ top of each issue. The form reads no other URL
 parameters and clears Summary, Page Number(s), and Detailed description on load, so
 those, and Severity, are pasted by hand. It also rejects text that is not plain ASCII,
 text that looks like markup such as `<...>`, and page lists over 50 characters, so the
-issue file is checked against those rules whenever it is loaded. The form has a CAPTCHA
-, so filing is manual. After filing, set the issue's `status` to `reported` and add a 
-`reported` object with the date and any reference TI provides.
+issue file is checked against those rules whenever it is loaded. The form has a
+CAPTCHA, so filing is manual.
+
+After filing, record it with `reported`:
+
+```bash
+uv run tools/document_issues.py reported devices/bq25798/device.json REG48-reset
+```
+
+It sets the issue's `status` to `reported` and records the filing date, today by
+default (`--date YYYY-MM-DD` to backdate). TI's form returns no reference number, so
+the date is the whole record. Running it again updates the date; an unknown id or an issue already marked `fixed` is refused, with nothing
+written. A reported issue drops out of `review` and `feedback` by default but still
+explains validator findings, because the JSON still copies the document's error. When
+a later revision corrects it, the validator flags the issue as no longer reproducing;
+then set `status` to `fixed`.
 
 ### Tests
 
