@@ -423,10 +423,10 @@ def explain_bitfield(register: str, field: str) -> str:
         return f"Unknown register: {register}. Available registers: {available}"
 
     reg_info = REGISTERS[key]
-    matching = [f for f in reg_info["fields"] if field.lower() in f.lower()]
+    indexes = [i for i, f in enumerate(reg_info["fields"]) if field.lower() in f.lower()]
     note = ""
 
-    if not matching:
+    if not indexes:
         close = closest_fields(field, reg_info["field_names"])
         if not close:
             names = sorted({n for n in reg_info["field_names"] if n.upper() != "RESERVED"})
@@ -435,14 +435,18 @@ def explain_bitfield(register: str, field: str) -> str:
                 f"Field names ({len(names)}, RESERVED omitted):\n"
                 + "\n".join(f"  • {n}" for n in names)
             )
-        matching = [reg_info["fields"][i] for i in close]
+        indexes = close
         note = (f"No exact match for '{field}'; closest field names follow "
                 f"(the document's own spelling may differ).\n\n")
 
+    matching = [reg_info["fields"][i] for i in indexes]
+    # Name the matched field rather than echoing the query.
+    heading = (reg_info["field_names"][indexes[0]] if len(indexes) == 1
+               else f"{len(indexes)} fields matching '{field}'")
     matching_text = "\n".join(f"  • {f}" for f in matching)
     return (
         f"{note}"
-        f"**{key} Register — {field}**\n\n"
+        f"**{key} Register — {heading}**\n\n"
         f"Register Address: {reg_info['address']}\n"
         f"{source_line(reg_info)}"
         f"Register Description: {reg_info['description']}\n\n"
