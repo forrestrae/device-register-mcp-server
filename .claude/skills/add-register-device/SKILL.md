@@ -28,7 +28,7 @@ Each configured device is exposed as its own MCP server (tool prefix
 means producing its `devices/<name>/` folder and registering it.
 
 This skill is **authoring only**. To *query* registers already served, use the MCP
-tools (`search_register`, `explain_bitfield`, `get_register`) on the relevant server.
+tools (`search_register`, `explain_bitfield`, `get_register`, `list_registers`) on the relevant server.
 
 ## Inputs you need from the user
 
@@ -52,11 +52,10 @@ Each device ships its **own** JSON Schema in its folder; the registers JSON must
 validate against it. Start from an existing device's schema as the template — the two
 in-repo schemas differ, so pick whichever fits the source data:
 
-- **`devices/tps25751/TPS25751-register-schema.json`** — strict/minimal. Top level is
-  `{ "registers": [...] }` only. `reset` must be hex-with-`h` (`^[0-9A-Fa-f]+h$`).
+- **`devices/tps25751/TPS25751-register-schema.json`** — strict/minimal. Top level is `registers` plus an optional `document` block. `reset` must be hex-with-`h` (`^[0-9A-Fa-f]+h$`).
   Enumerated `values` keys are hex-with-`h` (plus the TPS-only `APP `/`BOOT`/`PTCH`).
 - **`devices/bq25798/BQ25798-register-schema.json`** — richer. Requires top-level `device`
-  (a `const` pinned to `"BQ25798"`; change it for the new device) and allows `source` /
+  (a `const` pinned to `"BQ25798"`; change it for the new device) and allows `document` /
   `register_count`; `reset` may be `"X"` (POR/strap-dependent); fields may
   carry `reset_sources` and an `encoding` object; `values` keys may be hex-with-`h`
   **or** binary-with-`b` (e.g. `"011b"`).
@@ -127,7 +126,10 @@ Read the chosen schema before writing — it is the contract. Conventions common
    uv run --group tools tools/validate_registers.py devices/<name>/device.json --pdf <doc.pdf>
    ```
    It must report 0 errors. Warnings marked "same in source document" are
-   inconsistencies in the manufacturer's document, not in the JSON.
+   inconsistencies in the manufacturer's document, not in the JSON. Record them with
+   `uv run --group tools tools/document_issues.py discover devices/<name>/device.json --pdf <doc.pdf> --write`,
+   then edit each entry's summary and description. Finish with
+   `uv run --group test pytest`, which covers every device folder automatically.
 5. **Register it as an MCP server.** Add an entry to `.mcp.json` (and, if used,
    `.cursor/mcp.json` / `.vscode/mcp.json`), mirroring the existing devices:
    ```json
@@ -138,8 +140,9 @@ Read the chosen schema before writing — it is the contract. Conventions common
      "env": { "DEVICE_CONFIG": "devices/<name>/device.json" }
    }
    ```
-   Then add the three tool permissions to `.claude/settings.json`
-   (`mcp__<name>-docs__search_register`, `…__explain_bitfield`, `…__get_register`) and
+   Then add the four tool permissions to `.claude/settings.json`
+   (`mcp__<name>-docs__search_register`, `…__explain_bitfield`, `…__get_register`,
+   `…__list_registers`) and
    list `<name>-docs` in `enabledMcpjsonServers`. Consumer library repos (e.g.
    `lib/TPS25751`, `lib/BQ25798`) instead invoke this server from the sibling
    `lib/device-register-mcp-server` checkout: `uv --directory ../device-register-mcp-server run server.py`.

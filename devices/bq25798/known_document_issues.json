@@ -1,0 +1,27 @@
+{
+  "issues": [
+    {
+      "id": "REG48-reset",
+      "document": "SLUSDV2C",
+      "page": 128,
+      "register": "48h",
+      "check": "reset",
+      "severity": "S2-Major",
+      "summary": "REG48_Part_Information: register reset 0h contradicts field resets 3h and 1h",
+      "description": "Section 7.5.1.57, REG48_Part_Information Register (Offset = 48h), page 128. The heading gives [reset = 0h], and Figure 7-82 shows R-0h for every field. Table 7-70 lists the reset of PN_2:0 (bits 5-3) as 3h and DEV_REV_2:0 (bits 2-0) as 1h, which compose to 19h, not 0h.\nPlease state which value the device returns after reset. If the part number and device revision are fixed, the heading and Figure 7-82 should read 19h, R-3h, and R-1h to match Table 7-70.",
+      "status": "open"
+    },
+    {
+      "id": "REG2E-ADC_AVG-text",
+      "document": "SLUSDV2C",
+      "page": 113,
+      "register": "2Eh",
+      "bits": "3-3",
+      "check": "description",
+      "severity": "S3-Minor",
+      "summary": "REG2E_ADC_Control ADC_AVG: value 1h description ends mid-phrase",
+      "description": "Table 7-55, REG2E_ADC_Control Register Field Descriptions, page 113, bit 3 ADC_AVG. The description of value 1h reads \"Running average (not available for)\" and ends without saying what running average is not available for. A transcription of the HTML version of this datasheet reads \"Running average (not available for IBAT discharge)\", so the term appears to be missing from the PDF only.",
+      "status": "open"
+    }
+  ]
+}

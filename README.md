@@ -36,6 +36,8 @@ device-register-mcp-server/
     validate_registers.py  # structural checks; with --pdf or --fetch, field-by-field comparison
     diff_registers.py      # summarize changes between two registers JSON files
     fetch_document.py      # find and download the latest revision via document_url
+    document_issues.py     # record errors in the source document; print TI feedback form text
+  tests/                   # offline pytest suite over every device (uv run --group test pytest)
 ```
 
 Each device's registers JSON is the single source of truth for that device,
@@ -62,11 +64,12 @@ value works from this repo and from a sibling library repo.
 
 ## Available Tools
 
-Each configured device exposes three tools under its own `mcp__<server>__` prefix:
+Each configured device exposes four tools under its own `mcp__<server>__` prefix:
 
 - **`search_register`** — fuzzy search by name, address, or keyword
 - **`explain_bitfield`** — detailed bit-field lookup within a register
-- **`get_register`** — exact, case-insensitive single-register lookup
+- **`get_register`** — exact, case-insensitive single-register lookup, with its source document and page
+- **`list_registers`** — every register's address, width, reset, and source page in one call
 
 See [`AGENTS.md`](AGENTS.md) for full tool/resource documentation, the JSON
 schema contract, and how to onboard a new device.
@@ -83,8 +86,11 @@ flow — see [`AGENTS.md`](AGENTS.md) for the manual procedure.
 `tools/validate_registers.py` compares a registers JSON field by field against the
 source PDF's text layer and exits nonzero on any difference the JSON introduced.
 `tools/fetch_document.py --check` reports whether TI has published a newer revision
-than the one the JSON records. See [`AGENTS.md`](AGENTS.md) for the update workflow
-and the checks the validator runs.
+than the one the JSON records. Errors in the manufacturer's document itself are
+recorded per device in `known_document_issues.json`, and
+`tools/document_issues.py feedback` prints them ready for TI's documentation feedback
+form. `uv run --group test pytest` runs the offline checks. See
+[`AGENTS.md`](AGENTS.md) for the update workflow and the checks the validator runs.
 
 ## Consumer Repos
 

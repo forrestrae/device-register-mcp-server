@@ -7,7 +7,8 @@ current revision's file (.../slvucr8b/slvucr8b.pdf), so the latest revision is
 known from one HEAD request, without downloading the PDF.
 
 Downloads are cached as devices/<device>/docs/<LITERATURE-ID>.pdf (gitignored;
-TI documents are not redistributable). An existing file is reused.
+TI documents are not redistributable). A PDF already in docs/ with the same
+literature number is reused under whatever name it has.
 
 Usage:
   uv run --group tools tools/fetch_document.py devices/tps25751/device.json --check
@@ -26,6 +27,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 USER_AGENT = "device-register-tools/0.1"
 TIMEOUT = 60
@@ -78,6 +81,21 @@ def latest(manifest_path: Path) -> tuple[str, str]:
     return doc_id, final
 
 
+def find_local(docs: Path, doc_id: str) -> Path | None:
+    """A PDF already in docs/ whose literature number is doc_id, under any file name."""
+    from extract_registers import document_info
+    import pdfplumber
+
+    for pdf_path in sorted(docs.glob("*.pdf")):
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                if document_info(pdf).get("id") == doc_id:
+                    return pdf_path
+        except Exception:  # an unreadable file is simply not a match
+            continue
+    return None
+
+
 def fetch(manifest_path: Path) -> Path:
     """Download the latest revision into docs/ unless it is already there."""
     _, docs = manifest_info(manifest_path)
@@ -85,6 +103,9 @@ def fetch(manifest_path: Path) -> Path:
     target = docs / f"{doc_id}.pdf"
     if target.exists():
         return target
+    existing = find_local(docs, doc_id)
+    if existing:
+        return existing
     docs.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(final, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=TIMEOUT) as resp, \

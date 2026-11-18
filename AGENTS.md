@@ -16,7 +16,7 @@ with a different `DEVICE_CONFIG`):
 
 **Use `tps25751-docs`** for the host PD controller's own registers, and **`bq25798-docs`**
 for the downstream charger reached over the TPS25751's I2Cc bus. Both expose the same
-three tools and the same resource URIs (under each device's own `uri_scheme`).
+four tools and the same resource URIs (under each device's own `uri_scheme`).
 
 ## Layout
 
@@ -34,6 +34,8 @@ device-register-mcp-server/
     validate_registers.py  # structural checks; with --pdf or --fetch, field-by-field comparison
     diff_registers.py      # summarize changes between two registers JSON files
     fetch_document.py      # find and download the latest revision via document_url
+    document_issues.py     # record errors in the source document; print TI feedback form text
+  tests/                   # offline pytest suite over every device (uv run --group test pytest)
 ```
 
 Each device's registers JSON is the single source of truth for that device, validated
@@ -41,7 +43,7 @@ at startup against the schema in the same folder.
 
 ## Available Tools
 
-Each server exposes three tools (shown below for `tps25751-docs`; the `bq25798-docs`
+Each server exposes four tools (shown below for `tps25751-docs`; the `bq25798-docs`
 server exposes the identical tools under the `mcp__bq25798-docs__` prefix).
 
 ### `mcp__tps25751-docs__search_register`
@@ -81,12 +83,24 @@ explain_bitfield("INTERRUPT_EVENT_FOR_I2CT_IRQ", "Liquid Detection")
 ```
 
 **Returns:**
-- Register address and description
+- Register address, source document and page, and description
 - Matching bit field(s) with:
   - Bit positions (e.g., "bits 3:1" or "bit 30")
-  - Access type: [R], [R/W], or [W]
+  - Access type and field reset, e.g. `[R/W, reset 0h]`
   - Detailed description
   - Enumerated values (e.g., "0h = No connection", "1h = Port disabled")
+- Register names are accepted with spaces or underscores, in any case.
+- When no field contains the query, the closest field names are matched instead, so a
+  search still finds fields the document misspells (revision B of the TPS25751 manual
+  spells "Capabalities"). With no close match, the reply lists the field names only.
+
+### `mcp__tps25751-docs__list_registers`
+
+The register map in one call: every register's address, name, width in bits and bytes,
+reset value, and source page, headed by the source document. Use it to check register
+sizes or find a name before calling `get_register`.
+
+**Parameters:** none
 
 ### `mcp__tps25751-docs__get_register`
 
@@ -106,6 +120,11 @@ get_register("INTERRUPT_EVENT_FOR_I2CT_IRQ")
 
 **Returns:**
 - Address, width, reset value, description, and all bit fields for the named register
+- Source: the document's literature number, revision, and date, plus the page where
+  the register is described (also shown by `search_register`, `explain_bitfield`, and
+  the `register/{reg_name}` resource) (for example `SLVUCR8B (Rev. B, 2026-08), page 19`), when
+  the registers JSON records them. Cite it when a register fact goes into code or a
+  debugging conclusion.
 - If not found: list of all available register names
 
 ## Usage Guidelines
@@ -335,6 +354,42 @@ uv run --group tools tools/extract_registers.py <doc.pdf> -o <out.json>
 Both schemas accept an optional top-level `document` block (`id`, `revision`, `date`,
 `title`) and a per-register `source_page`, so a registers JSON can record the
 literature number and revision it was transcribed from, for example `SLVUCR8B`.
+
+### Known document issues
+
+Manufacturer documents contain their own errors: the BQ25798 datasheet gives REG48 a
+reset of `0h` while its field table composes to `19h`, and the TPS25751 revision B
+manual misspells several field names. A faithful registers JSON inherits them, so each
+device records them in `devices/<device>/known_document_issues.json`. The validator and
+the tests report a finding that matches an open or reported issue as a warning rather
+than an error, which keeps the offline check meaningful without the PDF. A recorded
+issue that no longer reproduces is flagged so it can be marked `fixed`.
+
+`tools/document_issues.py` manages the file:
+
+```bash
+uv run --group tools tools/document_issues.py list devices/bq25798/device.json
+uv run --group tools tools/document_issues.py discover devices/bq25798/device.json --pdf <doc.pdf>
+uv run --group tools tools/document_issues.py feedback devices/bq25798/device.json
+```
+
+`discover` drafts entries for structural problems found in the PDF itself (`--write`
+appends them; edit the summary and description before filing). `feedback` prints each
+open issue as the fields of TI's Technical Documents: Documentation Feedback form,
+with a pre-filled form link. The form has a CAPTCHA, so filing is manual. After filing,
+set the issue's `status` to `reported` and add a `reported` object with the date and
+any reference TI provides.
+
+### Tests
+
+```bash
+uv run --group test pytest
+```
+
+The suite runs the schema and structural checks on every device's registers JSON
+offline and fails on any finding not explained by a known document issue. It also
+starts the server for each device and checks that all registers are served and that
+lookups by spaced name return a source line. Run it after any edit to a registers JSON.
 
 ### Adding New Registers
 

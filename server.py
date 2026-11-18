@@ -11,8 +11,10 @@ Dependencies are declared in pyproject.toml and pinned in uv.lock. Launch with
 regardless of the caller's working directory.
 """
 
+import difflib
 import json
 import logging
+import re
 import os
 import sys
 import tomllib
@@ -191,9 +193,11 @@ def format_bit_field_description(field: Dict[str, Any]) -> str:
     else:
         bit_desc = f"bit {bit_field}"
 
+    reset = field.get("reset", "")
     result = f"{name} ({bit_desc})"
-    if access_type:
-        result += f" [{access_type}]"
+    tags = [t for t in (access_type, f"reset {reset}" if reset else "") if t]
+    if tags:
+        result += f" [{', '.join(tags)}]"
     if description:
         result += f": {description}"
     if field.get("values"):
@@ -208,22 +212,79 @@ def convert_registers_to_legacy_format(register_data: Dict[str, Any]) -> Dict[st
     """Convert JSON register format to the internal format expected by the server."""
     legacy_registers = {}
     for register in register_data.get("registers", []):
-        reg_name = register.get("name", "").upper().replace(" ", "_")
+        reg_name = register_key(register.get("name", ""))
         address = convert_hex_offset_to_address(register.get("offset", "0h"))
-        fields = [format_bit_field_description(f) for f in register.get("fields", [])]
+        raw_fields = register.get("fields", [])
+        fields = [format_bit_field_description(f) for f in raw_fields]
         legacy_registers[reg_name] = {
             "address": address,
             "description": register.get("description", ""),
             "fields": fields,
+            "field_names": [f.get("name", "") for f in raw_fields],
             "width": register.get("width", 8),
             "reset": register.get("reset", "0h"),
+            "source_page": register.get("source_page"),
         }
     return legacy_registers
+
+
+def format_source(document: Dict[str, Any] | None, page: int | None) -> str | None:
+    """Describe where a register's data came from, e.g.
+    'SLVUCR8B (Rev. B, 2026-08), page 15'. None when nothing is recorded."""
+    parts = []
+    if document and document.get("id"):
+        meta = []
+        if document.get("revision"):
+            meta.append(f"Rev. {document['revision']}")
+        if document.get("date"):
+            meta.append(document["date"])
+        parts.append(document["id"] + (f" ({', '.join(meta)})" if meta else ""))
+    if page:
+        parts.append(f"page {page}")
+    return ", ".join(parts) or None
+
+
+def source_line(reg_info: Dict[str, Any]) -> str:
+    """'Source: <doc>, page N' plus a newline, or '' when nothing is recorded."""
+    source = format_source(DOCUMENT, reg_info.get("source_page"))
+    return f"Source: {source}\n" if source else ""
+
+
+def register_key(name: str) -> str:
+    """Normalize a register name the way REGISTERS is keyed ('Power Path Status' -> 'POWER_PATH_STATUS')."""
+    return name.strip().upper().replace(" ", "_")
+
+
+def _norm_words(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def closest_fields(query: str, names: List[str], limit: int = 5, cutoff: float = 0.75) -> List[int]:
+    """Indexes of field names that approximately match `query`.
+
+    Tolerates the document's own misspellings ("Capabalities", "Missmatch") by
+    comparing the query against every same-length run of words in each name.
+    """
+    q = _norm_words(query)
+    if not q:
+        return []
+    n = len(q.split())
+    scored = []
+    for i, name in enumerate(names):
+        words = _norm_words(name).split()
+        windows = [" ".join(words[j:j + n]) for j in range(max(1, len(words) - n + 1))]
+        best = max(difflib.SequenceMatcher(None, q, w).ratio() for w in windows)
+        if best >= cutoff:
+            scored.append((best, i))
+    scored.sort(key=lambda t: -t[0])
+    return [i for _, i in scored[:limit]]
 
 
 # Load register data at startup
 _REGISTER_DATA = load_registers_from_json()
 REGISTERS = convert_registers_to_legacy_format(_REGISTER_DATA)
+# Literature number, revision and date the register data was transcribed from.
+DOCUMENT: Dict[str, Any] | None = _REGISTER_DATA.get("document")
 
 
 # ---------------------------------------------------------------------------
@@ -233,17 +294,18 @@ REGISTERS = convert_registers_to_legacy_format(_REGISTER_DATA)
 @mcp.resource(f"{URI_SCHEME}://registers")
 def registers_index_resource() -> str:
     """Index of all registers: name, address, and first line of description."""
-    lines = [f"{DEVICE_NAME} Register Index\n"]
+    source = format_source(DOCUMENT, None)
+    lines = [f"{DEVICE_NAME} Register Index" + (f" (source: {source})" if source else "") + "\n"]
     for reg_name, reg_info in REGISTERS.items():
         first_line = reg_info["description"].split("\n")[0].split(".")[0].strip()
-        lines.append(f"  {reg_name} ({reg_info['address']}): {first_line}")
+        lines.append(f"  {reg_name} ({reg_info['address']}, {reg_info['width']} bits): {first_line}")
     return "\n".join(lines)
 
 
 @mcp.resource(f"{URI_SCHEME}://register/{{reg_name}}")
 def register_resource(reg_name: str) -> str:
     """Device register documentation resource."""
-    key = reg_name.upper()
+    key = register_key(reg_name)
     if key not in REGISTERS:
         available = ", ".join(REGISTERS.keys())
         return f"Unknown register: {reg_name}. Available registers: {available}"
@@ -257,7 +319,7 @@ def register_resource(reg_name: str) -> str:
     fields_text = "\n".join(f"  • {f}" for f in reg_info["fields"])
     return f"""{DEVICE_NAME} {key} Register (Address: {reg_info['address']})
 
-Description: {reg_info['description']}
+{source_line(reg_info)}Description: {reg_info['description']}
 
 Bit Fields:
 {fields_text}
@@ -332,6 +394,8 @@ def search_register(query: str) -> str:
             fields_text = "\n".join(f"  • {f}" for f in reg_info["fields"])
             results.append(
                 f"**{reg_name} Register (Address: {reg_info['address']})**\n"
+                f"Width: {reg_info['width']} bits, Reset: {reg_info['reset']}\n"
+                f"{source_line(reg_info)}"
                 f"{reg_info['description']}\n\n"
                 f"Bit Fields:\n{fields_text}"
             )
@@ -353,41 +417,69 @@ def explain_bitfield(register: str, field: str) -> str:
         register: Register name (e.g. STATUS, MODE, POWER_PATH_STATUS)
         field: Bit field name or part of the name (e.g. "Connection State", "Mode")
     """
-    key = register.upper()
+    key = register_key(register)
     if key not in REGISTERS:
         available = ", ".join(REGISTERS.keys())
         return f"Unknown register: {register}. Available registers: {available}"
 
     reg_info = REGISTERS[key]
     matching = [f for f in reg_info["fields"] if field.lower() in f.lower()]
+    note = ""
 
     if not matching:
-        all_fields = "\n".join(f"  • {f}" for f in reg_info["fields"])
-        return (
-            f"Field '{field}' not found in {key} register.\n"
-            f"Available fields:\n{all_fields}"
-        )
+        close = closest_fields(field, reg_info["field_names"])
+        if not close:
+            names = sorted({n for n in reg_info["field_names"] if n.upper() != "RESERVED"})
+            return (
+                f"Field '{field}' not found in {key} register.\n"
+                f"Field names ({len(names)}, RESERVED omitted):\n"
+                + "\n".join(f"  • {n}" for n in names)
+            )
+        matching = [reg_info["fields"][i] for i in close]
+        note = (f"No exact match for '{field}'; closest field names follow "
+                f"(the document's own spelling may differ).\n\n")
 
     matching_text = "\n".join(f"  • {f}" for f in matching)
     return (
+        f"{note}"
         f"**{key} Register — {field}**\n\n"
         f"Register Address: {reg_info['address']}\n"
+        f"{source_line(reg_info)}"
         f"Register Description: {reg_info['description']}\n\n"
         f"Matching Fields:\n{matching_text}"
     )
 
 
 @mcp.tool()
+def list_registers() -> str:
+    """List every register with its address, width, reset value and source page.
+
+    One call gives the register map: use it to check sizes or find a name
+    before calling get_register.
+    """
+    source = format_source(DOCUMENT, None)
+    lines = [f"{DEVICE_NAME} registers ({len(REGISTERS)})" + (f", source: {source}" if source else "")]
+    for reg_name, reg_info in sorted(REGISTERS.items(), key=lambda kv: int(kv[1]["address"], 16)):
+        page = f", p.{reg_info['source_page']}" if reg_info.get("source_page") else ""
+        lines.append(
+            f"  {reg_info['address']}  {reg_name}  {reg_info['width']} bits"
+            f" ({-(-reg_info['width'] // 8)} bytes), reset {reg_info['reset']}{page}"
+        )
+    return "\n".join(lines)
+
+
+@mcp.tool()
 def get_register(name: str) -> str:
     """Exact lookup of a register by name (case-insensitive).
 
-    Returns structured output: address, description, and all bit fields.
+    Returns structured output: address, width, reset, the source document
+    revision and page when recorded, description, and all bit fields.
     If not found, lists available register names.
 
     Args:
         name: Register name (e.g. "STATUS", "Mode", "POWER_PATH_STATUS")
     """
-    key = name.upper().replace(" ", "_")
+    key = register_key(name)
     if key not in REGISTERS:
         available = sorted(REGISTERS.keys())
         available_list = "\n".join(f"  • {r}" for r in available)
@@ -403,6 +495,7 @@ def get_register(name: str) -> str:
         f"Address: {reg_info['address']}\n"
         f"Width: {reg_info['width']} bits\n"
         f"Reset: {reg_info['reset']}\n"
+        f"{source_line(reg_info)}"
         f"Description: {reg_info['description']}\n\n"
         f"Bit Fields:\n{fields_text}"
     )

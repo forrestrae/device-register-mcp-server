@@ -18,6 +18,9 @@ dependencies = [
 package = false
 
 [dependency-groups]
+test = [
+    "pytest>=8",
+]
 tools = [
     "pdfplumber>=0.11",
 ]

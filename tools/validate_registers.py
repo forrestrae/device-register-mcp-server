@@ -10,6 +10,11 @@ Without --pdf, runs checks that need only the JSON:
   values        enumerated value keys parse and fit the field's width
   access        access types are ones TI uses
   leaked-text   descriptions contain no template text (table titles, "(continued)", ...)
+  line-break    descriptions and values contain no line breaks
+
+Findings explained by an entry in the device's known_document_issues.json
+(see document_issues.py) are reported as warnings, so a faithful transcription
+of a flawed document passes without the PDF.
 
 With --pdf, also extracts the document's text layer (extract_registers.py) and checks:
   document      the JSON's document block matches the PDF's literature number
@@ -41,7 +46,9 @@ from typing import Any
 import jsonschema
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from extract_registers import extract  # noqa: E402
+from document_issues import load_issues, matches, problems  # noqa: E402
+# extract_registers (and pdfplumber) load only when a PDF is compared, so the
+# offline checks need nothing beyond jsonschema.
 
 ACCESS_TYPES = {"R", "W", "R/W", "RC", "R/WC", "W1C", "R/W1C", "W1S", "R/W1S", "RH", "R/W0C"}
 LEAK_RE = re.compile(
@@ -197,6 +204,8 @@ def check_structure(data: dict, report: Report) -> None:
                 m = LEAK_RE.search(text or "")
                 if m:
                     report.warn("leaked-text", fname, f"{what} contains template text {m.group(0)!r}")
+                if "\n" in (text or ""):
+                    report.warn("line-break", fname, f"{what} contains a line break; use a space")
 
         gaps = [b for b in range(width) if b not in owner]
         if gaps:
@@ -205,6 +214,8 @@ def check_structure(data: dict, report: Report) -> None:
         m = LEAK_RE.search(reg.get("description", "") or "")
         if m:
             report.warn("leaked-text", label, f"description contains template text {m.group(0)!r}")
+        if "\n" in (reg.get("description", "") or ""):
+            report.warn("line-break", label, "description contains a line break; use a space")
 
         reset_text = reg.get("reset", "")
         if re.fullmatch(r"[0-9A-Fa-f]+h", reset_text):
@@ -346,6 +357,33 @@ def mark_source_issues(report: Report, ref: dict) -> None:
             f.message = "same in source document: " + f.message
 
 
+STRUCTURAL_CHECKS = {"reset", "coverage", "width", "values", "access"}
+
+
+def apply_known_issues(report: Report, data: dict, issues: list[dict], compared_pdf: bool) -> None:
+    """Downgrade findings explained by a recorded document issue, and flag
+    recorded issues that no longer reproduce."""
+    document = (data.get("document") or {}).get("id")
+    used: set[str] = set()
+    for f in report.findings:
+        for issue in issues:
+            if matches(issue, f.check, f.where, document):
+                used.add(issue["id"])
+                if f.severity == "error":
+                    f.severity = "warning"
+                f.message = f"known document issue {issue['id']} ({issue['status']}): " + \
+                    re.sub(r"^same in source document: ", "", f.message)
+                break
+    for issue in issues:
+        if issue["id"] in used or issue.get("status") == "fixed" or issue.get("check") == "text":
+            continue
+        if document and issue.get("document") != document:
+            continue
+        if issue.get("check") in STRUCTURAL_CHECKS or compared_pdf:
+            report.warn("known-issues", issue["id"],
+                        "recorded document issue did not reproduce; mark it fixed or correct its location")
+
+
 # ---- driver -----------------------------------------------------------------
 
 def print_report(report: Report, title: str) -> None:
@@ -379,6 +417,9 @@ def main() -> int:
     data = json.loads(Path(reg_path).read_text())
 
     report = Report()
+    issues = load_issues(args.manifest)
+    for problem in problems(issues):
+        report.error("known-issues", "known_document_issues.json", problem)
     check_schema(data, base / manifest.get("schema_file", ""), report)
     check_structure(data, report)
     title = f"{manifest.get('device_name', '?')}: {reg_path}"
@@ -386,11 +427,16 @@ def main() -> int:
         from fetch_document import fetch
         args.pdf = fetch(args.manifest)
     if args.pdf:
-        from extract_registers import _parse_pages
+        from extract_registers import _parse_pages, extract
         ref = extract(args.pdf, _parse_pages(args.pages))
         mark_source_issues(report, ref)
         compare(data, ref, report)
         title += f"\n  vs {ref['document'].get('id', '?')} ({ref['document'].get('date', '?')}): {args.pdf}"
+    apply_known_issues(report, data, issues, compared_pdf=bool(args.pdf))
+    unrecorded = sum("same in source document" in f.message for f in report.findings)
+    if unrecorded:
+        title += (f"\n  {unrecorded} source-document issue(s) are not in known_document_issues.json; "
+                  "record them with tools/document_issues.py discover")
 
     print_report(report, title)
     if args.report:

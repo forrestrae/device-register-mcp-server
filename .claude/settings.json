@@ -5,9 +5,11 @@
       "mcp__tps25751-docs__search_register",
       "mcp__tps25751-docs__explain_bitfield",
       "mcp__tps25751-docs__get_register",
+      "mcp__tps25751-docs__list_registers",
       "mcp__bq25798-docs__search_register",
       "mcp__bq25798-docs__explain_bitfield",
-      "mcp__bq25798-docs__get_register"
+      "mcp__bq25798-docs__get_register",
+      "mcp__bq25798-docs__list_registers"
     ],
     "deny": []
   },

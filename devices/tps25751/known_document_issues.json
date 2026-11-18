@@ -1,0 +1,23 @@
+{
+  "issues": [
+    {
+      "id": "rev-B-misspellings",
+      "document": "SLVUCR8B",
+      "page": [
+        19,
+        20,
+        21,
+        23,
+        25,
+        39,
+        41,
+        51
+      ],
+      "check": "text",
+      "severity": "S3-Minor",
+      "summary": "Misspelled field names and value text in register descriptions",
+      "description": "Several field names and value descriptions are misspelled. Field names matter more than ordinary prose because software and documentation search for them by exact name.\n- Page 19, Interrupt Event for I2Ct_IRQ (14h), bit 36: \"Missing Get Capabalities Message Error\" should be \"Capabilities\".\n- Page 20, Interrupt Event for I2Ct_IRQ (14h), bit 14: \"Source Capabalities Message Received\" should be \"Capabilities\".\n- Page 21, Interrupt Mask for I2Ct_IRQ (16h), bit 36: \"Missing Get Capabalities Message Error\" should be \"Capabilities\".\n- Page 23, Interrupt Clear for I2Ct_IRQ (18h), bit 36: \"Missing Get Capabalities Message Error\" should be \"Capabilities\".\n- Page 25, Status (1Ah), Connection State value 2h: \"Corrosion Mitigaion (Ra/Ra)\" should be \"Mitigation\".\n- Page 39, Active RDO Contract (35h), bit 26: \"Capabality Missmatch\" should be \"Capability Mismatch\".\n- Page 41, Autonegotiate Sink (37h), bit 3: \"No Capabality Mismatch\" should be \"No Capability Mismatch\".\n- Page 51, ADC Results (6Ah), bits 95-88 IVBUS_Peak: \"through poewr path\" should be \"power path\".",
+      "status": "open"
+    }
+  ]
+}
