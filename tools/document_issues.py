@@ -121,7 +121,7 @@ def feedback_text(issue: dict[str, Any], part: str) -> str:
         f"Page Number(s):       {pages_text(issue['page'])}",
         "Detailed description:",
     ]
-    lines += [f"  {line}" for line in issue["description"].splitlines() or [""]]
+    lines += issue["description"].splitlines() or [""]
     return "\n".join(lines)
 
 
