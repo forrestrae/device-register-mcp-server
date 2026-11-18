@@ -1,6 +1,11 @@
 {
   "device": "BQ25798",
-  "source": "BQ25798-chapter7.html",
+  "document": {
+    "id": "SLUSDV2C",
+    "revision": "C",
+    "date": "2026-06",
+    "title": "BQ25798 I2C Controlled, 1 to 4-Cell, 5A Buck-Boost Battery Charger with Dual-Input Selector, MPPT for Solar Panels and Fast Backup Mode datasheet (Rev. C)"
+  },
   "register_count": 57,
   "registers": [
     {
@@ -9,6 +14,7 @@
       "width": 8,
       "reset": "X",
       "description": "Minimal System Voltage",
+      "source_page": 59,
       "fields": [
         {
           "bit_field": "7-6",
@@ -25,7 +31,7 @@
           "reset_sources": [
             "REG_RST"
           ],
-          "description": "Minimal System Voltage which must be less than VREG in REG01.\nDuring POR, the device reads the resistance tie to PROG pin, to identify the default battery cell count and determine the default power on VSYSMIN list below:\n1s: 3.5V\n2s: 7V\n3s: 9V\n4s: 12V",
+          "description": "Minimal System Voltage which must be less than VREG in REG01. During POR, the device reads the resistance tie to PROG pin, to identify the default battery cell count and determine the default power on VSYSMIN list below: 1s: 3.5V 2s: 7V 3s: 9V 4s: 12V",
           "encoding": {
             "range": "2500mV-16000mV",
             "fixed_offset": "2500mV",
@@ -43,6 +49,7 @@
       "width": 16,
       "reset": "X",
       "description": "Charge Voltage Limit",
+      "source_page": 60,
       "fields": [
         {
           "bit_field": "15-11",
@@ -59,7 +66,7 @@
           "reset_sources": [
             "REG_RST"
           ],
-          "description": "Battery Voltage Limit:\nDuring POR, the device reads the resistance tie to PROG pin, to identify the default battery cell count and determine the default power-on battery voltage regulation limit:\n1s: 4.2V\n2s: 8.4V\n3s: 12.6V\n4s: 16.8V",
+          "description": "Battery Voltage Limit: During POR, the device reads the resistance tie to PROG pin, to identify the default battery cell count and determine the default power-on battery voltage regulation limit: 1s: 4.2V 2s: 8.4V 3s: 12.6V 4s: 16.8V",
           "encoding": {
             "range": "3000mV-18800mV",
             "fixed_offset": "0mV",
@@ -77,6 +84,7 @@
       "width": 16,
       "reset": "X",
       "description": "Charge Current Limit",
+      "source_page": 61,
       "fields": [
         {
           "bit_field": "15-9",
@@ -94,7 +102,7 @@
             "WATCHDOG",
             "REG_RST"
           ],
-          "description": "Charge Current Limit\nDuring POR, the device reads the resistance tie to PROG pin, to identify the default battery cell count and determine the default power-on battery charging current: 1A",
+          "description": "Charge Current Limit During POR, the device reads the resistance tie to PROG pin, to identify the default battery cell count and determine the default power-on battery charging current: 1A",
           "encoding": {
             "range": "50mA-5000mA",
             "fixed_offset": "0mA",
@@ -112,13 +120,14 @@
       "width": 8,
       "reset": "24h",
       "description": "Input Voltage Limit",
+      "source_page": 62,
       "fields": [
         {
           "bit_field": "7-0",
           "name": "VINDPM_7:0",
           "access_type": "R/W",
           "reset": "24h",
-          "description": "Absolute VINDPM Threshold\nVINDPM register is reset to 3600mV upon adapter unplugged and it is set to the value based on the VBUS measurement when the adapter plugs in. It is not reset by the REG_RST and the WATCHDOG",
+          "description": "Absolute VINDPM Threshold VINDPM register is reset to 3600mV upon adapter unplugged and it is set to the value based on the VBUS measurement when the adapter plugs in. It is not reset by the REG_RST and the WATCHDOG",
           "encoding": {
             "por": "3600mV (24h)",
             "range": "3600mV-22000mV",
@@ -137,6 +146,7 @@
       "width": 16,
       "reset": "12Ch",
       "description": "Input Current Limit",
+      "source_page": 63,
       "fields": [
         {
           "bit_field": "15-9",
@@ -153,7 +163,7 @@
           "reset_sources": [
             "REG_RST"
           ],
-          "description": "Based on D+/D- detection results:\nUSB SDP = 500mA\nUSB CDP = 1.5A\nUSB DCP = 3.25A\nAdjustable High Voltage DCP = 1.5A\nUnknown Adapter = 3A\nNon-Standard Adapter = 1A/2A/2.1A/2.4A",
+          "description": "Based on D+/D- detection results: USB SDP = 500mA USB CDP = 1.5A USB DCP = 3.25A Adjustable High Voltage DCP = 1.5A Unknown Adapter = 3A Non-Standard Adapter = 1A/2A/2.1A/2.4A",
           "encoding": {
             "por": "3000mA (12Ch)",
             "range": "100mA-3300mA",
@@ -172,6 +182,7 @@
       "width": 8,
       "reset": "C3h",
       "description": "Precharge Control",
+      "source_page": 64,
       "fields": [
         {
           "bit_field": "7-6",
@@ -220,6 +231,7 @@
       "width": 8,
       "reset": "5h",
       "description": "Termination Control",
+      "source_page": 65,
       "fields": [
         {
           "bit_field": "7-7",
@@ -284,6 +296,7 @@
       "width": 8,
       "reset": "X",
       "description": "Re-charge Control",
+      "source_page": 66,
       "fields": [
         {
           "bit_field": "7-6",
@@ -343,6 +356,7 @@
       "width": 16,
       "reset": "DCh",
       "description": "VOTG regulation",
+      "source_page": 67,
       "fields": [
         {
           "bit_field": "15-11",
@@ -379,6 +393,7 @@
       "width": 8,
       "reset": "4Bh",
       "description": "IOTG regulation",
+      "source_page": 68,
       "fields": [
         {
           "bit_field": "7-7",
@@ -426,6 +441,7 @@
       "width": 8,
       "reset": "3Dh",
       "description": "Timer Control",
+      "source_page": 69,
       "fields": [
         {
           "bit_field": "7-6",
@@ -547,6 +563,7 @@
       "width": 8,
       "reset": "A2h",
       "description": "Charger Control 0",
+      "source_page": 70,
       "fields": [
         {
           "bit_field": "7-7",
@@ -626,7 +643,7 @@
             "WATCHDOG",
             "REG_RST"
           ],
-          "description": "Force start input current optimizer (ICO)\nNote: This bit can only be set and returns 0 after ICO starts. This bit only valid when EN_ICO = 1",
+          "description": "Force start input current optimizer (ICO) Note: This bit can only be set and returns 0 after ICO starts. This bit only valid when EN_ICO = 1",
           "values": {
             "0h": "Do NOT force ICO (Default)",
             "1h": "Force ICO start"
@@ -643,7 +660,7 @@
           "reset_sources": [
             "REG_RST"
           ],
-          "description": "Enable HIZ mode.\nThis bit will be also reset to 0, when the adapter is plugged in at VBUS.",
+          "description": "Enable HIZ mode. This bit will be also reset to 0, when the adapter is plugged in at VBUS.",
           "values": {
             "0h": "Disable (default)",
             "1h": "Enable"
@@ -696,6 +713,7 @@
       "width": 8,
       "reset": "85h",
       "description": "Charger Control 1",
+      "source_page": 72,
       "fields": [
         {
           "bit_field": "7-6",
@@ -784,6 +802,7 @@
       "width": 8,
       "reset": "40h",
       "description": "Charger Control 2",
+      "source_page": 73,
       "fields": [
         {
           "bit_field": "7-7",
@@ -880,7 +899,7 @@
           "reset_sources": [
             "REG_RST"
           ],
-          "description": "SFET control\nThe external ship FET control logic to force the device enter different modes.",
+          "description": "SFET control The external ship FET control logic to force the device enter different modes.",
           "values": {
             "0h": "IDLE (default)",
             "1h": "Shutdown Mode",
@@ -916,6 +935,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Control 3",
+      "source_page": 75,
       "fields": [
         {
           "bit_field": "7-7",
@@ -923,8 +943,7 @@
           "access_type": "R/W",
           "reset": "0h",
           "reset_sources": [
-            "VACx < V",
-            "VAC_PRESENT"
+            "VACx < VVAC_PRESENT"
           ],
           "description": "When this bit is set, the charger will force both EN_ACDRV1=0 and EN_ACDRV2=0",
           "encoding": {
@@ -992,7 +1011,7 @@
           "reset_sources": [
             "REG_RST"
           ],
-          "description": "When wake up the device from ship mode, how much time (t\nSM_EXIT\n) is required to pull low the QON pin.",
+          "description": "When wake up the device from ship mode, how much time (tSM_EXIT) is required to pull low the QON pin.",
           "values": {
             "0h": "1s (Default)",
             "1h": "15ms"
@@ -1062,13 +1081,14 @@
       "width": 8,
       "reset": "X",
       "description": "Charger Control 4",
+      "source_page": 76,
       "fields": [
         {
           "bit_field": "7-7",
           "name": "EN_ACDRV2",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "External ACFET2-RBFET2 gate driver control\nAt POR, if the charger detects that there is no ACFET2-RBFET2 populated, this bit will be locked at 0",
+          "description": "External ACFET2-RBFET2 gate driver control At POR, if the charger detects that there is no ACFET2-RBFET2 populated, this bit will be locked at 0",
           "values": {
             "0h": "turn off (default)",
             "1h": "turn on"
@@ -1082,7 +1102,7 @@
           "name": "EN_ACDRV1",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "External ACFET1-RBFET1 gate driver control\nAt POR, if the charger detects that there is no ACFET1-RBFET1 populated, this bit will be locked at 0",
+          "description": "External ACFET1-RBFET1 gate driver control At POR, if the charger detects that there is no ACFET1-RBFET1 populated, this bit will be locked at 0",
           "values": {
             "0h": "turn off (default)",
             "1h": "turn on"
@@ -1162,7 +1182,7 @@
           "reset_sources": [
             "REG_RST"
           ],
-          "description": "Force VINDPM detection\nNote: only when VBAT>VSYSMIN, this bit can be set to 1. Once the VINDPM auto detection is done, this bits returns to 0.",
+          "description": "Force VINDPM detection Note: only when VBAT>VSYSMIN, this bit can be set to 1. Once the VINDPM auto detection is done, this bits returns to 0.",
           "values": {
             "0h": "Do NOT force VINDPM detection (default)",
             "1h": "Force the converter stop switching, and ADC measures the VBUS voltage without input current, then the charger updates the VINDPM register accordingly."
@@ -1196,13 +1216,14 @@
       "width": 8,
       "reset": "16h",
       "description": "Charger Control 5",
+      "source_page": 78,
       "fields": [
         {
           "bit_field": "7-7",
           "name": "SFET_PRESENT",
           "access_type": "R/W",
           "reset": "0h",
-          "description": "The user has to set this bit based on whether a ship FET is populated or not. The POR default value is 0, which means the charger does not support all the features associated with the ship FET. The register bits list below all are locked at 0.\nEN_BATOC=0\nSDRV_CTRL=00\nWhen this bit is set to 1, the register bits list above become programmable, and the charger can support the features associated with the ship FET",
+          "description": "The user has to set this bit based on whether a ship FET is populated or not. The POR default value is 0, which means the charger does not support all the features associated with the ship FET. The register bits list below all are locked at 0. EN_BATOC=0 SDRV_CTRL=00 When this bit is set to 1, the register bits list above become programmable, and the charger can support the features associated with the ship FET",
           "values": {
             "0h": "No ship FET populated",
             "1h": "Ship FET populated"
@@ -1317,6 +1338,7 @@
       "width": 8,
       "reset": "AAh",
       "description": "MPPT Control",
+      "source_page": 80,
       "fields": [
         {
           "bit_field": "7-5",
@@ -1404,6 +1426,7 @@
       "width": 8,
       "reset": "C0h",
       "description": "Temperature Control",
+      "source_page": 81,
       "fields": [
         {
           "bit_field": "7-6",
@@ -1521,6 +1544,7 @@
       "width": 8,
       "reset": "7Ah",
       "description": "NTC Control 0",
+      "source_page": 82,
       "fields": [
         {
           "bit_field": "7-5",
@@ -1601,6 +1625,7 @@
       "width": 8,
       "reset": "54h",
       "description": "NTC Control 1",
+      "source_page": 83,
       "fields": [
         {
           "bit_field": "7-6",
@@ -1706,6 +1731,7 @@
       "width": 16,
       "reset": "0h",
       "description": "ICO Current Limit",
+      "source_page": 84,
       "fields": [
         {
           "bit_field": "15-9",
@@ -1738,6 +1764,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Status 0",
+      "source_page": 85,
       "fields": [
         {
           "bit_field": "7-7",
@@ -1852,6 +1879,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Status 1",
+      "source_page": 87,
       "fields": [
         {
           "bit_field": "7-5",
@@ -1878,7 +1906,7 @@
           "name": "VBUS_STAT_3:0",
           "access_type": "R",
           "reset": "0h",
-          "description": "VBUS status bits\n0h: No Input or BHOT or BCOLD in OTG mode\n1h: USB SDP (500mA)\n2h: USB CDP (1.5A)\n3h: USB DCP (3.25A)\n4h: Adjustable High Voltage DCP (HVDCP) (1.5A)\n5h: Unknown adaptor (3A)\n6h: Non-Standard Adapter (1A/2A/2.1A/2.4A)\n7h: In OTG mode\n8h: Not qualified adaptor\n9h: Reserved\nAh: Reserved\nBh: Device directly powered from VBUS\nCh: Backup Mode\nDh: Reserved\nEh: Reserved\nFh: Reserved",
+          "description": "VBUS status bits 0h: No Input or BHOT or BCOLD in OTG mode 1h: USB SDP (500mA) 2h: USB CDP (1.5A) 3h: USB DCP (3.25A) 4h: Adjustable High Voltage DCP (HVDCP) (1.5A) 5h: Unknown adaptor (3A) 6h: Non-Standard Adapter (1A/2A/2.1A/2.4A) 7h: In OTG mode 8h: Not qualified adaptor 9h: Reserved Ah: Reserved Bh: Device directly powered from VBUS Ch: Backup Mode Dh: Reserved Eh: Reserved Fh: Reserved",
           "encoding": {
             "por": "0h"
           }
@@ -1905,6 +1933,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Status 2",
+      "source_page": 89,
       "fields": [
         {
           "bit_field": "7-6",
@@ -1962,10 +1991,10 @@
           "name": "VBAT_PRESENT_STAT",
           "access_type": "R",
           "reset": "0h",
-          "description": "Battery present status (V\nBAT\n> V\nBAT_UVLOZ\n)\nBAT\nNOT present\nBAT\npresent",
+          "description": "Battery present status (VBAT > VBAT_UVLOZ)",
           "values": {
-            "0h": "V BAT NOT present",
-            "1h": "V BAT present"
+            "0h": "VBAT NOT present",
+            "1h": "VBAT present"
           },
           "encoding": {
             "por": "0b"
@@ -1979,6 +2008,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Status 3",
+      "source_page": 90,
       "fields": [
         {
           "bit_field": "7-7",
@@ -2027,10 +2057,10 @@
           "name": "VSYS_STAT",
           "access_type": "R",
           "reset": "0h",
-          "description": "VSYS Regulation Status (forward mode)\nBAT\n> V\nSYSMIN\n)\nBAT\n< V\nSYSMIN\n)",
+          "description": "VSYS Regulation Status (forward mode)",
           "values": {
-            "0h": "Not in VSYSMIN regulation (V BAT > V SYSMIN )",
-            "1h": "In VSYSMIN regulation (V BAT < V SYSMIN )"
+            "0h": "Not in VSYSMIN regulation (VBAT > VSYSMIN)",
+            "1h": "In VSYSMIN regulation (VBAT < VSYSMIN)"
           },
           "encoding": {
             "por": "0b"
@@ -2093,6 +2123,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Status 4",
+      "source_page": 92,
       "fields": [
         {
           "bit_field": "7-5",
@@ -2179,6 +2210,7 @@
       "width": 8,
       "reset": "0h",
       "description": "FAULT Status 0",
+      "source_page": 93,
       "fields": [
         {
           "bit_field": "7-7",
@@ -2300,6 +2332,7 @@
       "width": 8,
       "reset": "0h",
       "description": "FAULT Status 1",
+      "source_page": 95,
       "fields": [
         {
           "bit_field": "7-7",
@@ -2393,6 +2426,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Flag 0",
+      "source_page": 96,
       "fields": [
         {
           "bit_field": "7-7",
@@ -2514,6 +2548,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Flag 1",
+      "source_page": 98,
       "fields": [
         {
           "bit_field": "7-7",
@@ -2621,6 +2656,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Flag 2",
+      "source_page": 100,
       "fields": [
         {
           "bit_field": "7-7",
@@ -2735,6 +2771,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Flag 3",
+      "source_page": 102,
       "fields": [
         {
           "bit_field": "7-5",
@@ -2821,6 +2858,7 @@
       "width": 8,
       "reset": "0h",
       "description": "FAULT Flag 0",
+      "source_page": 103,
       "fields": [
         {
           "bit_field": "7-7",
@@ -2942,6 +2980,7 @@
       "width": 8,
       "reset": "0h",
       "description": "FAULT Flag 1",
+      "source_page": 105,
       "fields": [
         {
           "bit_field": "7-7",
@@ -3035,6 +3074,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Mask 0",
+      "source_page": 106,
       "fields": [
         {
           "bit_field": "7-7",
@@ -3180,6 +3220,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Mask 1",
+      "source_page": 108,
       "fields": [
         {
           "bit_field": "7-7",
@@ -3305,6 +3346,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Mask 2",
+      "source_page": 109,
       "fields": [
         {
           "bit_field": "7-7",
@@ -3440,6 +3482,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Charger Mask 3",
+      "source_page": 110,
       "fields": [
         {
           "bit_field": "7-5",
@@ -3546,6 +3589,7 @@
       "width": 8,
       "reset": "0h",
       "description": "FAULT Mask 0",
+      "source_page": 111,
       "fields": [
         {
           "bit_field": "7-7",
@@ -3691,6 +3735,7 @@
       "width": 8,
       "reset": "0h",
       "description": "FAULT Mask 1",
+      "source_page": 112,
       "fields": [
         {
           "bit_field": "7-7",
@@ -3799,6 +3844,7 @@
       "width": 8,
       "reset": "30h",
       "description": "ADC Control",
+      "source_page": 113,
       "fields": [
         {
           "bit_field": "7-7",
@@ -3903,6 +3949,7 @@
       "width": 8,
       "reset": "0h",
       "description": "ADC Function Disable 0",
+      "source_page": 114,
       "fields": [
         {
           "bit_field": "7-7",
@@ -4038,6 +4085,7 @@
       "width": 8,
       "reset": "0h",
       "description": "ADC Function Disable 1",
+      "source_page": 115,
       "fields": [
         {
           "bit_field": "7-7",
@@ -4122,13 +4170,14 @@
       "width": 16,
       "reset": "0h",
       "description": "IBUS ADC",
+      "source_page": 116,
       "fields": [
         {
           "bit_field": "15-0",
           "name": "IBUS_ADC_15:0",
           "access_type": "R",
           "reset": "0h",
-          "description": "IBUS ADC reading\nReported in 2 's Complement.\nWhen the current is flowing from VBUS to PMID, IBUS ADC reports positive value, and when the current is flowing from PMID to VBUS, IBUS ADC reports negative value.",
+          "description": "IBUS ADC reading Reported in 2 's Complement. When the current is flowing from VBUS to PMID, IBUS ADC reports positive value, and when the current is flowing from PMID to VBUS, IBUS ADC reports negative value.",
           "encoding": {
             "por": "0mA (0h)",
             "range": "0mA-5000mA",
@@ -4144,13 +4193,14 @@
       "width": 16,
       "reset": "0h",
       "description": "IBAT ADC",
+      "source_page": 117,
       "fields": [
         {
           "bit_field": "15-0",
           "name": "IBAT_ADC_15:0",
           "access_type": "R",
           "reset": "0h",
-          "description": "IBAT ADC reading\nReported in 2 's Complement.\n.\nThe IBAT ADC reports the battery charging current in forward mode and the battery discharging current in OTG and battery only (HiZ) mode if EN_IBAT bit in REG14[5]=1. The sign bit is 0b for charging current and 1b for discharging current.",
+          "description": "IBAT ADC reading Reported in 2 's Complement. . The IBAT ADC reports the battery charging current in forward mode and the battery discharging current in OTG and battery only (HiZ) mode if EN_IBAT bit in REG14[5]=1. The sign bit is 0b for charging current and 1b for discharging current.",
           "encoding": {
             "por": "0mA (0h)",
             "range": "0mA-8000mA",
@@ -4166,6 +4216,7 @@
       "width": 16,
       "reset": "0h",
       "description": "VBUS ADC",
+      "source_page": 118,
       "fields": [
         {
           "bit_field": "15-0",
@@ -4188,6 +4239,7 @@
       "width": 16,
       "reset": "0h",
       "description": "VAC1 ADC",
+      "source_page": 119,
       "fields": [
         {
           "bit_field": "15-0",
@@ -4210,6 +4262,7 @@
       "width": 16,
       "reset": "0h",
       "description": "VAC2 ADC",
+      "source_page": 120,
       "fields": [
         {
           "bit_field": "15-0",
@@ -4232,6 +4285,7 @@
       "width": 16,
       "reset": "0h",
       "description": "VBAT ADC",
+      "source_page": 121,
       "fields": [
         {
           "bit_field": "15-0",
@@ -4254,6 +4308,7 @@
       "width": 16,
       "reset": "0h",
       "description": "VSYS ADC",
+      "source_page": 122,
       "fields": [
         {
           "bit_field": "15-0",
@@ -4276,6 +4331,7 @@
       "width": 16,
       "reset": "0h",
       "description": "TS ADC",
+      "source_page": 123,
       "fields": [
         {
           "bit_field": "15-0",
@@ -4297,14 +4353,15 @@
       "name": "REG41_TDIE_ADC",
       "width": 16,
       "reset": "0h",
-      "description": "TDIE ADC",
+      "description": "TDIE_ADC",
+      "source_page": 124,
       "fields": [
         {
           "bit_field": "15-0",
           "name": "TDIE_ADC_15:0",
           "access_type": "R",
           "reset": "0h",
-          "description": "TDIE ADC reading\nReported in 2 's Complement.",
+          "description": "TDIE ADC reading Reported in 2 's Complement.",
           "encoding": {
             "por": "0°C (0h)",
             "range": "-40°C-150°C",
@@ -4320,6 +4377,7 @@
       "width": 16,
       "reset": "0h",
       "description": "D+ ADC",
+      "source_page": 125,
       "fields": [
         {
           "bit_field": "15-0",
@@ -4342,6 +4400,7 @@
       "width": 16,
       "reset": "0h",
       "description": "D- ADC",
+      "source_page": 126,
       "fields": [
         {
           "bit_field": "15-0",
@@ -4364,6 +4423,7 @@
       "width": 8,
       "reset": "0h",
       "description": "DPDM Driver",
+      "source_page": 127,
       "fields": [
         {
           "bit_field": "7-5",
@@ -4420,6 +4480,7 @@
       "width": 8,
       "reset": "0h",
       "description": "Part Information",
+      "source_page": 128,
       "fields": [
         {
           "bit_field": "7-6",

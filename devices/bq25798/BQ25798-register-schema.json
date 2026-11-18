@@ -13,10 +13,6 @@
       "type": "string",
       "const": "BQ25798"
     },
-    "source": {
-      "type": "string",
-      "minLength": 1
-    },
     "register_count": {
       "type": "integer",
       "minimum": 1
