@@ -16,3 +16,8 @@ dependencies = [
 # Run from the source tree (server.py locates devices/ relative to itself),
 # so there is nothing to build or install.
 package = false
+
+[dependency-groups]
+tools = [
+    "pdfplumber>=0.11",
+]

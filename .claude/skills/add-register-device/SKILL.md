@@ -39,7 +39,9 @@ tools (`search_register`, `explain_bitfield`, `get_register`) on the relevant se
    (bit range, name, access type, description, and any enumerated values).
 3. **I2C address(es)** of the device (7-bit, e.g. `0x6B`). Ask if not given.
 
-If the source is a large PDF, extract the register tables first (ask the user to paste
+If the source is a born-digital TI datasheet or TRM, `tools/extract_registers.py` reads
+its register tables straight from the PDF text layer (see step 2). For other PDFs,
+extract the register tables first (ask the user to paste
 the relevant tables if extraction is unreliable). **Never invent register addresses,
 bit positions, reset values, or enumerated meanings** — if a value is unknown, ask or
 omit the field rather than guessing.
@@ -77,6 +79,12 @@ Read the chosen schema before writing — it is the contract. Conventions common
 2. **Create `devices/<name>/`** and write:
    - `<name>_registers_extracted.json` (or `<name>_registers.json`) built from the
      source, one register at a time, following the schema. Keep descriptions faithful.
+     For a TI document that uses the standard `<Name> Register (Offset = ...)` template,
+     generate it instead once the manifest from step 3 exists:
+     `uv run --group tools tools/extract_registers.py <doc.pdf> --manifest devices/<name>/device.json -o devices/<name>/<name>_registers_extracted.json`.
+     The output records the literature number and revision in a top-level `document`
+     block and each register's `source_page`, so the schema must allow both (copy those
+     definitions from an existing schema).
    - The matching **schema file** (copy/adapt the chosen template).
 3. **Write the `device.json` manifest** in the same folder:
    ```json
@@ -87,10 +95,14 @@ Read the chosen schema before writing — it is the contract. Conventions common
      "class_prefix": "<DevicePrefix>",
      "registers_file": "<name>_registers_extracted.json",
      "schema_file": "<the schema file you wrote>",
+     "document_url": "https://www.ti.com/lit/pdf/<literature-number-without-revision>",
      "i2c_addresses": ["0x6B"],
      "i2c_protocol": "<one-line description of how this device is accessed over I2C>"
    }
    ```
+   - `document_url` is optional. For TI parts, `https://www.ti.com/lit/pdf/<base id>`
+     always redirects to the latest revision, which lets `tools/fetch_document.py` and
+     `validate_registers.py --fetch` find and download it.
    - The server resolves `registers_file` and `schema_file` **relative to the manifest's
      directory** (`devices/<name>/`). Since both live beside `device.json`, use plain
      filenames.
@@ -109,7 +121,13 @@ Read the chosen schema before writing — it is the contract. Conventions common
    print("OK:", len(data["registers"]), "registers valid")
    PY
    ```
-   Fix every validation error — do not hand back an invalid file.
+   Fix every validation error; do not hand back an invalid file. When the source is a
+   PDF, also compare the JSON against it field by field:
+   ```bash
+   uv run --group tools tools/validate_registers.py devices/<name>/device.json --pdf <doc.pdf>
+   ```
+   It must report 0 errors. Warnings marked "same in source document" are
+   inconsistencies in the manufacturer's document, not in the JSON.
 5. **Register it as an MCP server.** Add an entry to `.mcp.json` (and, if used,
    `.cursor/mcp.json` / `.vscode/mcp.json`), mirroring the existing devices:
    ```json

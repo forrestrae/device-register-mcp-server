@@ -30,6 +30,12 @@ device-register-mcp-server/
   devices/
     tps25751/  device.json + tps25751_registers_extracted.json + TPS25751-register-schema.json
     bq25798/   device.json + bq25798_registers_extracted.json  + BQ25798-register-schema.json
+    <device>/docs/         # source PDFs; gitignored, not redistributable
+  tools/
+    extract_registers.py   # PDF text layer -> registers JSON (reference extraction)
+    validate_registers.py  # structural checks; with --pdf or --fetch, field-by-field comparison
+    diff_registers.py      # summarize changes between two registers JSON files
+    fetch_document.py      # find and download the latest revision via document_url
 ```
 
 Each device's registers JSON is the single source of truth for that device,
@@ -71,6 +77,14 @@ Onboarding a new chip means creating `devices/<name>/` (a `device.json` manifest
 a registers JSON, and a matching schema) and registering it as another MCP
 server entry. The `/add-register-device` skill in this repo automates the whole
 flow — see [`AGENTS.md`](AGENTS.md) for the manual procedure.
+
+## Validating Register Data
+
+`tools/validate_registers.py` compares a registers JSON field by field against the
+source PDF's text layer and exits nonzero on any difference the JSON introduced.
+`tools/fetch_document.py --check` reports whether TI has published a newer revision
+than the one the JSON records. See [`AGENTS.md`](AGENTS.md) for the update workflow
+and the checks the validator runs.
 
 ## Consumer Repos
 

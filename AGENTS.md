@@ -28,6 +28,12 @@ device-register-mcp-server/
   devices/
     tps25751/  device.json + tps25751_registers_extracted.json + TPS25751-register-schema.json
     bq25798/   device.json + bq25798_registers_extracted.json  + BQ25798-register-schema.json
+    <device>/docs/         # source PDFs; gitignored, not redistributable
+  tools/
+    extract_registers.py   # PDF text layer -> registers JSON (reference extraction)
+    validate_registers.py  # structural checks; with --pdf or --fetch, field-by-field comparison
+    diff_registers.py      # summarize changes between two registers JSON files
+    fetch_document.py      # find and download the latest revision via document_url
 ```
 
 Each device's registers JSON is the single source of truth for that device, validated
@@ -212,6 +218,7 @@ The server is fully device-generic. To serve registers for a different chip:
    | `schema_file` | string | Path to JSON schema for validation, relative to the manifest |
    | `i2c_addresses` | array | List of I2C addresses as hex strings (e.g. `["0x6B"]`) |
    | `i2c_protocol` | string | Optional one-line I2C access note for the `config/i2c` resource; omit for a neutral "see datasheet" note |
+   | `document_url` | string | Optional stable link to the latest source document, such as `https://www.ti.com/lit/pdf/slvucr8`; used by `tools/fetch_document.py` and `validate_registers.py --fetch`, ignored by the server |
 
    All fields are optional — missing keys fall back to the TPS25751 defaults.
 
@@ -248,12 +255,82 @@ BQ25798 one additionally allows `"X"` resets, `reset_sources`, and `encoding` me
 
 ### Updating Register Data
 
-To update register definitions:
+For a born-digital TI document, regenerate the registers JSON from the PDF rather than
+editing it by hand, then review the diff before replacing the current file.
 
-1. Edit the `devices/<device>/<device>_registers_extracted.json` file
-2. Each device has its own schema in `devices/<device>/` (validated at startup)
-3. Restart the MCP server (it loads JSON at startup)
-4. No code changes needed in `server.py`
+1. Check whether TI has published a newer revision than the one the JSON records:
+
+   ```bash
+   uv run --group tools tools/fetch_document.py devices/tps25751/device.json --check
+   ```
+
+   It prints the latest literature number and exits 1 when the registers JSON is behind.
+
+2. Download the latest revision to `devices/tps25751/docs/<LITERATURE-ID>.pdf`:
+
+   ```bash
+   uv run --group tools tools/fetch_document.py devices/tps25751/device.json
+   ```
+
+3. Extract a candidate registers JSON:
+
+   ```bash
+   uv run --group tools tools/extract_registers.py devices/tps25751/docs/<LITERATURE-ID>.pdf \
+       --manifest devices/tps25751/device.json -o /tmp/tps25751_candidate.json
+   ```
+
+4. Review what changed against the current file:
+
+   ```bash
+   uv run --group tools tools/diff_registers.py devices/tps25751/tps25751_registers_extracted.json \
+       /tmp/tps25751_candidate.json
+   ```
+
+5. Copy the candidate over `devices/tps25751/tps25751_registers_extracted.json`, run the
+   validator described in the next section, and restart the MCP server, which loads the
+   JSON at startup. No code changes are needed in `server.py`.
+
+### Validating register data
+
+`tools/validate_registers.py` checks a device's registers JSON against its source PDF.
+Run it after any edit to a registers JSON, and before relying on the data for a new
+document revision. The PDFs are gitignored, so they are fetched or placed under
+`devices/<device>/docs/` locally.
+
+```bash
+uv run --group tools tools/validate_registers.py devices/tps25751/device.json --fetch
+```
+
+`--fetch` compares against the latest revision from the manifest's `document_url`,
+downloading it once to `docs/`. Pass `--pdf <path>` instead to compare against a
+specific local revision.
+
+The validator reads the PDF text layer with pdfplumber, so the reference is exact for
+born-digital TI documents and needs no OCR or LLM. It parses TI's per-register template:
+the `<Name> Register (Offset = ...) [Reset = ...]` heading, the Bit / Field / Type /
+Reset / [Notes] / Description table, and the register summary table.
+
+It reports errors for differences the JSON introduced: a missing or extra register,
+or a mismatched width, reset, bit range, field name, access type, enumerated value,
+reset source, or encoding. It reports warnings for prose that differs after
+normalization and for template text leaked into descriptions. Inconsistencies that
+exist in the source document itself, such as overlapping RESERVED rows or a register
+reset that disagrees with its field resets, are reported as warnings marked "same in
+source document". The exit code is 1 when any error remains.
+
+Without `--pdf`, only the schema and structural checks run, and source-document
+inconsistencies cannot be told apart from JSON errors.
+
+`tools/extract_registers.py` produces the reference extraction on its own, which is
+useful for diffing two revisions of a document:
+
+```bash
+uv run --group tools tools/extract_registers.py <doc.pdf> -o <out.json>
+```
+
+Both schemas accept an optional top-level `document` block (`id`, `revision`, `date`,
+`title`) and a per-register `source_page`, so a registers JSON can record the
+literature number and revision it was transcribed from, for example `SLVUCR8B`.
 
 ### Adding New Registers
 
