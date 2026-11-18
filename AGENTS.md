@@ -370,7 +370,7 @@ issue that no longer reproduces is flagged so it can be marked `fixed`.
 ```bash
 uv run --group tools tools/document_issues.py list devices/bq25798/device.json
 uv run --group tools tools/document_issues.py discover devices/bq25798/device.json --pdf <doc.pdf>
-uv run --group tools tools/document_issues.py review devices/bq25798/device.json
+uv run --group tools tools/document_issues.py review devices/bq25798/device.json --open
 uv run --group tools tools/document_issues.py feedback devices/bq25798/device.json
 ```
 
@@ -378,9 +378,10 @@ uv run --group tools tools/document_issues.py feedback devices/bq25798/device.js
 appends them; edit the summary and description before filing).
 
 Review each issue against the document before filing it. `review` renders every cited
-page with the issue's `evidence` strings boxed in red and opens a local HTML page that
-shows each image beside the issue's description and the exact form text. Each image
-links to the PDF at that page. An `evidence` entry is `{"page": N, "text": "..."}`,
+page with the issue's `evidence` strings boxed in red and writes a local HTML page that
+shows each image beside the issue's description and the exact form text, then prints
+its path. Add `--open` to open it in the default browser. Each image links to the PDF
+at that page. An `evidence` entry is `{"page": N, "text": "..."}`,
 with the text copied exactly from the PDF; a string not found on its page is flagged,
 which usually means the claim or the string is wrong. The PDF is located in
 `devices/<device>/docs/` by the issue's literature number (`--pdf` overrides), and the

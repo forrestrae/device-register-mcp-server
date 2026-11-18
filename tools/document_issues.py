@@ -39,7 +39,7 @@ folder, because TI documents are not redistributable.
 Usage:
   uv run --group tools tools/document_issues.py list devices/bq25798/device.json
   uv run --group tools tools/document_issues.py discover devices/bq25798/device.json --pdf DOC.pdf [--write]
-  uv run --group tools tools/document_issues.py review devices/bq25798/device.json [ID ...] [--pdf DOC.pdf] [--out DIR] [--no-open]
+  uv run --group tools tools/document_issues.py review devices/bq25798/device.json [ID ...] [--pdf DOC.pdf] [--out DIR] [--open]
   uv run --group tools tools/document_issues.py feedback devices/bq25798/device.json [ID ...]
 """
 
@@ -373,7 +373,7 @@ def main() -> int:
         if name == "review":
             p.add_argument("--pdf", type=Path, help="document to render (default: found in docs/ by literature number)")
             p.add_argument("--out", type=Path, help="output folder (default: <device>/docs/review, gitignored)")
-            p.add_argument("--no-open", action="store_true", help="do not open the page in a browser")
+            p.add_argument("--open", action="store_true", help="open the page in the default browser")
         if name == "discover":
             p.add_argument("--pdf", type=Path, required=True)
             p.add_argument("--write", action="store_true", help=f"append candidates to {ISSUES_FILE}")
@@ -402,7 +402,7 @@ def main() -> int:
         out = args.out or args.manifest.resolve().parent / "docs" / "review"
         page = review(chosen, args.manifest, part, out, args.pdf)
         print(page)
-        if not args.no_open:
+        if args.open:
             webbrowser.open(page.as_uri())
         return 0
 
