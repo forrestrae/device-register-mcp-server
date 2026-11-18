@@ -36,7 +36,7 @@ device-register-mcp-server/
     validate_registers.py  # structural checks; with --pdf or --fetch, field-by-field comparison
     diff_registers.py      # summarize changes between two registers JSON files
     fetch_document.py      # find and download the latest revision via document_url
-    document_issues.py     # record errors in the source document; print TI feedback form text
+    document_issues.py     # record errors in the source document; review them; print TI feedback form text
   tests/                   # offline pytest suite over every device (uv run --group test pytest)
 ```
 
@@ -87,9 +87,10 @@ flow — see [`AGENTS.md`](AGENTS.md) for the manual procedure.
 source PDF's text layer and exits nonzero on any difference the JSON introduced.
 `tools/fetch_document.py --check` reports whether TI has published a newer revision
 than the one the JSON records. Errors in the manufacturer's document itself are
-recorded per device in `known_document_issues.json`, and
-`tools/document_issues.py feedback` prints them ready for TI's documentation feedback
-form. `uv run --group test pytest` runs the offline checks. See
+recorded per device in `known_document_issues.json`.
+`tools/document_issues.py review` shows each one on its page of the PDF with the cited
+text boxed, for a human check before filing, and `tools/document_issues.py feedback`
+prints them ready for TI's documentation feedback form. `uv run --group test pytest` runs the offline checks. See
 [`AGENTS.md`](AGENTS.md) for the update workflow and the checks the validator runs.
 
 ## Consumer Repos

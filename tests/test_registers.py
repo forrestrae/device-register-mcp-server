@@ -63,6 +63,52 @@ def test_known_issues_well_formed(device):
             assert issue["register"].upper() in offsets, f"{issue['id']}: no register {issue['register']}"
 
 
+BASE_ISSUE = {"id": "x", "document": "D", "page": [3, 4], "check": "text", "severity": "S3-Minor",
+              "summary": "s", "description": "d", "status": "open"}
+
+
+@pytest.mark.parametrize("evidence, expected", [
+    ([{"page": 3, "text": "Capabalities"}], None),
+    ([], "non-empty list"),
+    ("Capabalities", "non-empty list"),
+    (["Capabalities"], "must be an object"),
+    ([{"page": 5, "text": "Capabalities"}], "page must be one of"),
+    ([{"page": "3", "text": "Capabalities"}], "page must be one of"),
+    ([{"page": 3, "text": "  "}], "text must be a non-empty string"),
+])
+def test_evidence_validation(evidence, expected):
+    found = problems([{**BASE_ISSUE, "evidence": evidence}])
+    if expected is None:
+        assert not found
+    else:
+        assert any(expected in p for p in found), found
+
+
+def test_evidence_found_in_pdf(device):
+    """Every recorded evidence string appears on its page, when the cited PDF is at hand."""
+    pdfplumber = pytest.importorskip("pdfplumber", reason="needs the tools group")
+    from document_issues import locate
+    from fetch_document import find_local
+
+    manifest_path = device[0]
+    issues = [i for i in load_issues(manifest_path) if i.get("evidence")]
+    docs = manifest_path.parent / "docs"
+    checked = 0
+    for doc_id in {i["document"] for i in issues}:
+        pdf_path = find_local(docs, doc_id) if docs.is_dir() else None
+        if not pdf_path:
+            continue
+        with pdfplumber.open(pdf_path) as pdf:
+            for issue in (i for i in issues if i["document"] == doc_id):
+                for pno, hits in locate(pdf, issue).items():
+                    assert hits is not None, f"{issue['id']}: page {pno} is beyond the document"
+                    missing = [t for t, boxes in hits if not boxes]
+                    assert not missing, f"{issue['id']}: not on page {pno}: {missing}"
+                    checked += 1
+    if not checked:
+        pytest.skip("no cited PDF in docs/ (TI documents are not in git)")
+
+
 def test_document_recorded(device):
     _, _, data = device
     doc = data.get("document") or {}

@@ -34,7 +34,7 @@ device-register-mcp-server/
     validate_registers.py  # structural checks; with --pdf or --fetch, field-by-field comparison
     diff_registers.py      # summarize changes between two registers JSON files
     fetch_document.py      # find and download the latest revision via document_url
-    document_issues.py     # record errors in the source document; print TI feedback form text
+    document_issues.py     # record errors in the source document; review them; print TI feedback form text
   tests/                   # offline pytest suite over every device (uv run --group test pytest)
 ```
 
@@ -370,13 +370,26 @@ issue that no longer reproduces is flagged so it can be marked `fixed`.
 ```bash
 uv run --group tools tools/document_issues.py list devices/bq25798/device.json
 uv run --group tools tools/document_issues.py discover devices/bq25798/device.json --pdf <doc.pdf>
+uv run --group tools tools/document_issues.py review devices/bq25798/device.json
 uv run --group tools tools/document_issues.py feedback devices/bq25798/device.json
 ```
 
 `discover` drafts entries for structural problems found in the PDF itself (`--write`
-appends them; edit the summary and description before filing). `feedback` prints each
-open issue as the fields of TI's Technical Documents: Documentation Feedback form,
-with a pre-filled form link. The form has a CAPTCHA, so filing is manual. After filing,
+appends them; edit the summary and description before filing).
+
+Review each issue against the document before filing it. `review` renders every cited
+page with the issue's `evidence` strings boxed in red and opens a local HTML page that
+shows each image beside the issue's description and the exact form text. Each image
+links to the PDF at that page. An `evidence` entry is `{"page": N, "text": "..."}`,
+with the text copied exactly from the PDF; a string not found on its page is flagged,
+which usually means the claim or the string is wrong. The PDF is located in
+`devices/<device>/docs/` by the issue's literature number (`--pdf` overrides), and the
+output goes to `devices/<device>/docs/review/`, which is gitignored because TI documents
+are not redistributable. With the PDF present, the tests check that every evidence
+string is on its page. `review` only displays; correct the issue file by hand.
+
+`feedback` prints each open issue as the fields of TI's Technical Documents:
+Documentation Feedback form, with a pre-filled form link. The form has a CAPTCHA, so filing is manual. After filing,
 set the issue's `status` to `reported` and add a `reported` object with the date and
 any reference TI provides.
 
