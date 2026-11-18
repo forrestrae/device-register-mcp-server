@@ -391,7 +391,8 @@ string is on its page. `review` only displays; correct the issue file by hand.
 
 `feedback` prints each open issue as the fields of TI's Technical Documents:
 Documentation Feedback form, with a link that fills in Literature Number and Part
-Number; the review page lists the same link at the top. The form reads no other URL
+Number; the review page shows the same link and fields, labeled as on the form, at the
+top of each issue. The form reads no other URL
 parameters and clears Summary, Page Number(s), and Detailed description on load, so
 those, and Severity, are pasted by hand. It also rejects text that is not plain ASCII,
 text that looks like markup such as `<...>`, and page lists over 50 characters, so the

@@ -402,19 +402,12 @@ def review(issues: list[dict[str, Any]], manifest_path: Path, part: str, out: Pa
         sections.append("\n".join(body))
 
     nav = " ".join(f'<a href="#{esc(i["id"])}">{esc(i["id"])}</a>' for i in issues)
-    forms = "".join(
-        f'<li><a href="{esc(form_url(doc, part))}" target="_blank" rel="noopener">TI documentation feedback form for {esc(doc)}</a></li>'
-        for doc in dict.fromkeys(i["document"] for i in issues))
     page = out / "index.html"
     page.write_text(
         "<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\">"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         f"<title>{esc(part)} document issues</title><style>{CSS}</style></head><body>"
         f"<header><h1>{esc(part)} document issues: review</h1>"
-        f"<ul class=\"forms\">{forms}</ul>"
-        "<p>The form fills in Literature Number and Part Number from the link. Copy Summary, "
-        "Severity, Page Number(s), and Detailed description from each issue's form text below; "
-        "the form accepts only plain ASCII in those fields.</p>"
         f"<p>{len(issues)} issue(s), generated {date.today().isoformat()}. For each issue, check that "
         "the boxed text on the page says what the description claims before filing it. "
         "Edit known_document_issues.json for anything that does not hold up.</p>"
