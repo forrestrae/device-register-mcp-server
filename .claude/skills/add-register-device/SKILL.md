@@ -53,8 +53,9 @@ in-repo schemas differ, so pick whichever fits the source data:
 - **`devices/tps25751/TPS25751-register-schema.json`** — strict/minimal. Top level is
   `{ "registers": [...] }` only. `reset` must be hex-with-`h` (`^[0-9A-Fa-f]+h$`).
   Enumerated `values` keys are hex-with-`h` (plus the TPS-only `APP `/`BOOT`/`PTCH`).
-- **`devices/bq25798/BQ25798-register-schema.json`** — richer. Allows top-level `device`
-  / `source` / `register_count`; `reset` may be `"X"` (POR/strap-dependent); fields may
+- **`devices/bq25798/BQ25798-register-schema.json`** — richer. Requires top-level `device`
+  (a `const` pinned to `"BQ25798"`; change it for the new device) and allows `source` /
+  `register_count`; `reset` may be `"X"` (POR/strap-dependent); fields may
   carry `reset_sources` and an `encoding` object; `values` keys may be hex-with-`h`
   **or** binary-with-`b` (e.g. `"011b"`).
 

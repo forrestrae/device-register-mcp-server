@@ -9,10 +9,10 @@ hardware devices, extracted from their official manufacturer manuals. One server
 Two devices are defined and exposed as two MCP servers (both run this same `server.py`
 with a different `DEVICE_CONFIG`):
 
-| MCP server | Device | Registers | Tool prefix |
-|---|---|---|---|
-| `tps25751-docs` | TPS25751 USB-C PD controller | 27 | `mcp__tps25751-docs__*` |
-| `bq25798-docs` | BQ25798 buck-boost charger | 57 | `mcp__bq25798-docs__*` |
+| MCP server | Device | Tool prefix |
+|---|---|---|
+| `tps25751-docs` | TPS25751 USB-C PD controller | `mcp__tps25751-docs__*` |
+| `bq25798-docs` | BQ25798 buck-boost charger | `mcp__bq25798-docs__*` |
 
 **Use `tps25751-docs`** for the host PD controller's own registers, and **`bq25798-docs`**
 for the downstream charger reached over the TPS25751's I2Cc bus. Both expose the same
@@ -71,7 +71,7 @@ Get detailed information about specific bit fields within a register.
 ```
 explain_bitfield("STATUS", "Connection State")
 explain_bitfield("MODE", "Mode")
-explain_bitfield("INTERRUPT_EVENT_FOR_I2C1", "Plug Insert")
+explain_bitfield("INTERRUPT_EVENT_FOR_I2C1", "Liquid Detection")
 ```
 
 **Returns:**
@@ -106,17 +106,10 @@ get_register("INTERRUPT_EVENT_FOR_I2C1")
 
 ### When to Use the MCP Server
 
-**ALWAYS use the MCP server when:**
-1. Looking up register addresses
-2. Understanding bit field meanings
-3. Writing code that reads/writes TPS25751 registers
-4. Debugging register values
-5. Adding new register support to the library
-
-**DO NOT:**
-- Guess register addresses or bit positions
-- Use outdated documentation
-- Make assumptions about enumerated values
+Take register addresses, bit positions, access types, and enumerated values from
+these MCP tools, not from memory or older copies of the manual. A wrong offset or bit
+position compiles cleanly and fails only on hardware, so verify each one with the tools
+before you use it in code or in a debugging conclusion.
 
 ### Typical Workflow
 
@@ -133,39 +126,6 @@ get_register("INTERRUPT_EVENT_FOR_I2C1")
    access types, and enumerated values.
 
 4. Implement the register class using the information from steps 1-3.
-
-## Register Coverage
-
-The MCP server includes **27 registers** from the TPS25751:
-
-- Mode (0x03)
-- Customer Use (0x06)
-- Command Register for I2C1 (0x08)
-- Data Register for CMD1 (0x09)
-- Interrupt Event for I2C1 (0x14)
-- Interrupt Mask for I2C1 (0x16)
-- Interrupt Clear for I2C1 (0x18)
-- Status (0x1A)
-- Power Path Status (0x26)
-- Port Configuration (0x28)
-- Boot Status (0x2C)
-- Boot Flags (0x2D)
-- PD Status (0x40)
-- Type C Status (0x69)
-- RX Source Capabilities (0x30)
-- Active RDO (0x44)
-- Active Contract PDO (0x34)
-- Active Contract RDO (0x35)
-- System Configuration (0x61)
-- Sleep Configuration (0x62)
-- Device Capabilities (0x0D)
-- GPIO Status (0x68)
-- GPIO Configuration (0x64)
-- GPIO Configuration Port 2 (0x65)
-- Temperature (0x66)
-- Vendor Specific Register (0x67)
-- ADC Results (0x6A)
-- IO Config (0x5C)
 
 ## Data Format
 
@@ -273,7 +233,7 @@ The server is fully device-generic. To serve registers for a different chip:
 
 ### Example: BQ25798
 
-The BQ25798 device lives at `devices/bq25798/` (manifest + 57-register JSON +
+The BQ25798 device lives at `devices/bq25798/` (manifest + registers JSON +
 `BQ25798-register-schema.json`) and is served as the `bq25798-docs` MCP server:
 
 ```bash
@@ -310,4 +270,4 @@ The main TPS25751 Arduino/PlatformIO project uses this MCP server for:
 - Verifying register implementations against the TI manual
 - Understanding bit field meanings for debugging
 
-See the root `AGENTS.md` for instructions on using this MCP server within the main project context.
+Consumer library repos document their own use of this server in their own instruction files.
