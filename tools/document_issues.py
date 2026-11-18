@@ -395,7 +395,7 @@ def review(issues: list[dict[str, Any]], manifest_path: Path, part: str, out: Pa
                     link = f"{pdf_path.resolve().as_uri()}#page={pno}"
                     body.append(
                         f'<ul class="evidence">{items}</ul>'
-                        f'<figure><a href="{esc(link)}"><img src="{esc(name)}" alt="Page {pno} of {esc(issue["document"])}"></a>'
+                        f'<figure><a href="{esc(link)}" target="_blank" rel="noopener"><img src="{esc(name)}" alt="Page {pno} of {esc(issue["document"])}"></a>'
                         f'<figcaption>Page {pno} of {esc(pdf_path.name)}. Select the image to open the PDF at this page.'
                         "</figcaption></figure>")
         body.append("</section>")
