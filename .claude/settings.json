@@ -16,5 +16,6 @@
   "enabledMcpjsonServers": [
     "tps25751-docs",
     "bq25798-docs"
-  ]
+  ],
+  "plansDirectory": "./docs/plans"
 }
