@@ -84,6 +84,23 @@ def test_evidence_validation(evidence, expected):
         assert any(expected in p for p in found), found
 
 
+@pytest.mark.parametrize("change, expected", [
+    ({}, None),
+    ({"description": "Line one.\nLine two, with \"quotes\" and 3h -> 19h."}, None),
+    ({"summary": "Reset ≥ 19h"}, "plain ASCII only"),
+    ({"description": "Use “curly” quotes"}, "plain ASCII only"),
+    ({"description": "The <b>heading</b> says 0h"}, "rejects as markup"),
+    ({"summary": "Calls alert(1)"}, "rejects as markup"),
+    ({"page": list(range(100, 120))}, "holds 50"),
+])
+def test_feedback_form_rules(change, expected):
+    found = problems([{**BASE_ISSUE, **change}])
+    if expected is None:
+        assert not found
+    else:
+        assert any(expected in p for p in found), found
+
+
 def test_evidence_found_in_pdf(device):
     """Every recorded evidence string appears on its page, when the cited PDF is at hand."""
     pdfplumber = pytest.importorskip("pdfplumber", reason="needs the tools group")

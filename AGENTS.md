@@ -390,9 +390,14 @@ are not redistributable. With the PDF present, the tests check that every eviden
 string is on its page. `review` only displays; correct the issue file by hand.
 
 `feedback` prints each open issue as the fields of TI's Technical Documents:
-Documentation Feedback form, with a pre-filled form link. The form has a CAPTCHA, so filing is manual. After filing,
-set the issue's `status` to `reported` and add a `reported` object with the date and
-any reference TI provides.
+Documentation Feedback form, with a link that fills in Literature Number and Part
+Number; the review page lists the same link at the top. The form reads no other URL
+parameters and clears Summary, Page Number(s), and Detailed description on load, so
+those, and Severity, are pasted by hand. It also rejects text that is not plain ASCII,
+text that looks like markup such as `<...>`, and page lists over 50 characters, so the
+issue file is checked against those rules whenever it is loaded. The form has a CAPTCHA
+, so filing is manual. After filing, set the issue's `status` to `reported` and add a 
+`reported` object with the date and any reference TI provides.
 
 ### Tests
 

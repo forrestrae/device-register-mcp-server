@@ -98,6 +98,38 @@ def problems(issues: list[dict[str, Any]]) -> list[str]:
         if issue.get("bits") and not re.fullmatch(r"\d+-\d+", issue["bits"]):
             out.append(f"{label}: bits must be 'high-low'")
         out += [f"{label}: {p}" for p in evidence_problems(issue)]
+        out += [f"{label}: {p}" for p in form_problems(issue)]
+    return out
+
+
+# The feedback form's client-side checks (techdocfeedback page script): every
+# text field must be printable ASCII or whitespace and must not look like markup
+# or script; Page Number(s) is limited to 50 characters. A field that fails is
+# rejected on submit, so catch it here instead.
+FORM_TEXT = re.compile(r"[\x20-\x7e\s]*")
+FORM_REJECTED = (re.compile(r"<(.*?)>"), re.compile(r"alert\(.*?\)"), re.compile(r"on\(.*?\)"))
+FORM_PAGE_MAX = 50
+
+
+def form_problems(issue: dict[str, Any]) -> list[str]:
+    """Reasons the feedback form would reject this issue's text."""
+    out = []
+    fields = {"summary": issue.get("summary"), "description": issue.get("description"),
+              "page": pages_text(issue["page"]) if issue.get("page") else None}
+    for key, value in fields.items():
+        if not isinstance(value, str):
+            continue
+        bad = sorted({c for c in value if not FORM_TEXT.fullmatch(c)})
+        if bad:
+            out.append(f"{key} has characters the feedback form rejects (plain ASCII only): "
+                       + " ".join(f"{c!r} (U+{ord(c):04X})" for c in bad))
+        for pattern in FORM_REJECTED:
+            m = pattern.search(value)
+            if m:
+                out.append(f"{key} contains {m.group(0)!r}, which the feedback form rejects as markup")
+    if fields["page"] and len(fields["page"]) > FORM_PAGE_MAX:
+        out.append(f"page list is {len(fields['page'])} characters; the form's Page Number(s) "
+                   f"field holds {FORM_PAGE_MAX}")
     return out
 
 
@@ -155,8 +187,17 @@ def pages_text(page: int | list[int]) -> str:
     return ", ".join(str(p) for p in page) if isinstance(page, list) else str(page)
 
 
+def form_url(document: str, part: str) -> str:
+    """The feedback form with Literature Number and Part Number filled in.
+
+    These are the only two fields the form reads from the URL (litnum, partnum).
+    It clears Summary, Page Number(s), and Detailed description on load and has
+    no parameter for Severity, so those are pasted by hand."""
+    return f"{FEEDBACK_URL}?{urlencode({'litnum': document, 'partnum': part} if part else {'litnum': document})}"
+
+
 def feedback_text(issue: dict[str, Any], part: str) -> str:
-    url = f"{FEEDBACK_URL}?{urlencode({'litnum': issue['document'], 'partnum': part})}"
+    url = form_url(issue["document"], part)
     lines = [
         f"=== {issue['id']} ({issue['status']}) ===",
         f"Form:                 {url}",
@@ -347,12 +388,19 @@ def review(issues: list[dict[str, Any]], manifest_path: Path, part: str, out: Pa
         sections.append("\n".join(body))
 
     nav = " ".join(f'<a href="#{esc(i["id"])}">{esc(i["id"])}</a>' for i in issues)
+    forms = "".join(
+        f'<li><a href="{esc(form_url(doc, part))}">TI documentation feedback form for {esc(doc)}</a></li>'
+        for doc in dict.fromkeys(i["document"] for i in issues))
     page = out / "index.html"
     page.write_text(
         "<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\">"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         f"<title>{esc(part)} document issues</title><style>{CSS}</style></head><body>"
         f"<header><h1>{esc(part)} document issues: review</h1>"
+        f"<ul class=\"forms\">{forms}</ul>"
+        "<p>The form fills in Literature Number and Part Number from the link. Copy Summary, "
+        "Severity, Page Number(s), and Detailed description from each issue's form text below; "
+        "the form accepts only plain ASCII in those fields.</p>"
         f"<p>{len(issues)} issue(s), generated {date.today().isoformat()}. For each issue, check that "
         "the boxed text on the page says what the description claims before filing it. "
         "Edit known_document_issues.json for anything that does not hold up.</p>"
