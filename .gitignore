@@ -3,7 +3,7 @@
 venv/
 
 # Texas Instruments datasheets — not redistributable
-docs/*.pdf
+docs/**
 
 # IDE — JetBrains/CLion
 .idea/
