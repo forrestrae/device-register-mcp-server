@@ -27,7 +27,10 @@
           "text": "1h"
         }
       ],
-      "status": "open"
+      "status": "reported",
+      "reported": {
+        "date": "2026-11-18"
+      }
     },
     {
       "id": "REG2E-ADC_AVG-text",
@@ -45,7 +48,10 @@
           "text": "Running average (not available for)"
         }
       ],
-      "status": "open"
+      "status": "reported",
+      "reported": {
+        "date": "2026-11-18"
+      }
     }
   ]
 }

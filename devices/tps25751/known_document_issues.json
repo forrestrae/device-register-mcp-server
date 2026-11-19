@@ -59,7 +59,10 @@
           "text": "poewr"
         }
       ],
-      "status": "open"
+      "status": "reported",
+      "reported": {
+        "date": "2026-11-18"
+      }
     }
   ]
 }
